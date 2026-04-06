@@ -15,8 +15,10 @@ export function useShopWizard() {
             case 2:
                 return store.products.length >= 1;
             case 3:
-                return store.deliveryModes.length > 0 && store.paymentModes.length > 0;
+                return true; // Sections are optional but recommended
             case 4:
+                return store.deliveryModes.length > 0 && store.paymentModes.length > 0;
+            case 5:
                 return store.isVerified;
             default:
                 return true;

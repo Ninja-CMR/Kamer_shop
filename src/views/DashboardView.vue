@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useShopStore, type Product } from '../stores/shop';
+import { useShopStore, type Product, type Section } from '../stores/shop';
 import { 
   LayoutDashboard, 
   Package, 
@@ -12,6 +12,9 @@ import {
   Share2,
   Pencil,
   Trash2,
+  Folder,
+  Check,
+  Image as ImageIcon
 } from 'lucide-vue-next';
 import ImageUpload from '../components/ImageUpload.vue';
 import Button from '../components/Button.vue';
@@ -22,6 +25,9 @@ const activeTab = ref('products'); // 'overview', 'products', 'settings'
 // Product Form Modal state
 const showProductModal = ref(false);
 const editingProduct = ref<Partial<Product> | null>(null);
+
+const showSectionModal = ref(false);
+const editingSection = ref<Partial<Section> | null>(null);
 
 const openProductModal = (product?: Product) => {
   editingProduct.value = product ? { ...product } : {
@@ -55,6 +61,40 @@ const shareShop = () => {
     const url = window.location.origin + '/shop/' + store.name.replace(/\s+/g, '-').toLowerCase();
     window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`, '_blank');
 };
+
+const openSectionModal = (section?: Section) => {
+  editingSection.value = section ? { ...section } : {
+    id: Date.now().toString(),
+    name: '',
+    description: '',
+    coverImage: '',
+    productIds: []
+  };
+  showSectionModal.value = true;
+};
+
+const saveSection = () => {
+  if (editingSection.value && editingSection.value.name) {
+    const s = editingSection.value as Section;
+    const exists = store.sections.find(item => item.id === s.id);
+    if (exists) {
+      store.updateSection(s);
+    } else {
+      store.addSection(s);
+    }
+    showSectionModal.value = false;
+  }
+};
+
+const toggleProductInSection = (productId: string) => {
+  if (!editingSection.value) return;
+  const index = editingSection.value.productIds!.indexOf(productId);
+  if (index === -1) {
+    editingSection.value.productIds!.push(productId);
+  } else {
+    editingSection.value.productIds!.splice(index, 1);
+  }
+};
 </script>
 
 <template>
@@ -70,6 +110,7 @@ const shareShop = () => {
           v-for="item in [
             { id: 'overview', label: 'Résumé de la go', icon: LayoutDashboard },
             { id: 'products', label: 'Mes Produits', icon: Package },
+            { id: 'sections', label: 'Mes Blocs', icon: Folder },
             { id: 'settings', label: 'Ma Boutique', icon: Settings }
           ]"
           :key="item.id"
@@ -250,6 +291,63 @@ const shareShop = () => {
             </div>
         </div>
 
+        <!-- Section Management -->
+        <div v-if="activeTab === 'sections'" class="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
+                <div>
+                    <h2 class="text-2xl font-black text-primary">Organise ta boutique</h2>
+                    <p class="text-gray-500 text-sm font-normal">Crée des blocs pour regrouper tes articles (ex: iPhones, Promo Noël).</p>
+                </div>
+                <Button @click="openSectionModal()" class="w-full sm:w-auto flex items-center gap-2">
+                    <Plus :size="20" /> Nouveau Bloc
+                </Button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div v-if="store.sections.length === 0" class="col-span-full text-center py-20 bg-white rounded-[3rem] border-2 border-dashed border-gray-200">
+                    <Folder :size="64" class="mx-auto text-gray-200 mb-4" />
+                    <h4 class="text-xl font-extrabold text-gray-400">Aucun bloc créé</h4>
+                    <p class="text-gray-400 font-normal">Sépare tes produits pour que les clients se retrouvent vite.</p>
+                </div>
+
+                <div 
+                    v-for="s in store.sections" 
+                    :key="s.id"
+                    class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden flex flex-col group"
+                >
+                    <div class="h-32 bg-gray-50 relative">
+                        <img v-if="s.coverImage" :src="s.coverImage" class="w-full h-full object-cover" />
+                        <div v-else class="w-full h-full flex items-center justify-center text-gray-200">
+                            <ImageIcon :size="32" />
+                        </div>
+                        <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button @click="openSectionModal(s)" class="p-2 bg-white text-primary rounded-xl shadow-lg hover:scale-110 transition-transform">
+                                <Pencil :size="16" />
+                            </button>
+                            <button @click="store.removeSection(s.id)" class="p-2 bg-white text-red-500 rounded-xl shadow-lg hover:scale-110 transition-transform">
+                                <Trash2 :size="16" />
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h4 class="font-bold text-lg text-primary">{{ s.name }}</h4>
+                        <p class="text-xs text-gray-500 mt-1 line-clamp-1 italic">{{ s.description || 'Pas de description' }}</p>
+                        <div class="mt-4 flex items-center justify-between">
+                            <span class="text-[10px] font-black text-secondary uppercase bg-secondary/10 px-2 py-1 rounded-lg">{{ s.productIds.length }} Produits</span>
+                            <div class="flex -space-x-2">
+                                <div v-for="pid in s.productIds.slice(0, 3)" :key="pid" class="w-6 h-6 rounded-full border-2 border-white bg-gray-100 overflow-hidden">
+                                     <img v-if="store.products.find(p => p.id === pid)?.image" :src="store.products.find(p => p.id === pid)?.image" class="w-full h-full object-cover" />
+                                </div>
+                                <div v-if="s.productIds.length > 3" class="w-6 h-6 rounded-full border-2 border-white bg-primary text-white text-[8px] font-bold flex items-center justify-center">
+                                    +{{ s.productIds.length - 3 }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Settings -->
         <div v-if="activeTab === 'settings'" class="max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div class="bg-white rounded-[3rem] border border-gray-100 p-10 space-y-8">
@@ -342,6 +440,62 @@ const shareShop = () => {
             </div>
         </div>
     </div>
+
+    <!-- Section Modal -->
+    <Teleport to="body">
+        <div v-if="showSectionModal" class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+            <div class="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                <div class="p-8 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+                    <h3 class="text-2xl font-black text-primary">{{ editingSection?.id ? 'Modifier le bloc' : 'Nouveau bloc' }}</h3>
+                    <button @click="showSectionModal = false" class="p-2 hover:bg-gray-100 rounded-full transition-all">
+                        <X :size="24" class="rotate-45" />
+                    </button>
+                </div>
+
+                <div class="p-8 space-y-6 overflow-y-auto custom-scrollbar">
+                    <ImageUpload v-model="editingSection!.coverImage" label="Photo de couverture du bloc" />
+
+                    <div class="space-y-4">
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-gray-400 uppercase">Nom du bloc</label>
+                            <input v-model="editingSection!.name" class="w-full px-4 py-3 rounded-xl border-2 border-gray-100 outline-none focus:border-primary font-bold" />
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-gray-400 uppercase">Description</label>
+                            <textarea v-model="editingSection!.description" rows="2" class="w-full px-4 py-3 rounded-xl border-2 border-gray-100 outline-none focus:border-primary font-normal"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="text-xs font-bold text-gray-400 uppercase">Sélectionner les produits</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <button 
+                                v-for="p in store.products" 
+                                :key="p.id"
+                                @click="toggleProductInSection(p.id)"
+                                class="flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left"
+                                :class="[editingSection!.productIds!.includes(p.id) ? 'border-primary bg-primary/5 text-primary' : 'border-gray-100 hover:border-gray-300']"
+                            >
+                                <div class="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+                                    <img v-if="p.image" :src="p.image" class="w-full h-full object-cover" />
+                                </div>
+                                <div class="flex-grow min-w-0">
+                                    <p class="font-bold text-xs truncate">{{ p.name }}</p>
+                                    <p class="text-[10px] font-bold text-secondary">{{ p.price }} FCFA</p>
+                                </div>
+                                <Check v-if="editingSection!.productIds!.includes(p.id)" :size="16" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-8 bg-gray-50 flex gap-4">
+                    <Button @click="showSectionModal = false" variant="secondary" class="flex-grow">Annuler</Button>
+                    <Button @click="saveSection" variant="primary" class="flex-grow">Enregistrer</Button>
+                </div>
+            </div>
+        </div>
+    </Teleport>
   </div>
 </template>
 

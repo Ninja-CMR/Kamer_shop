@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Camera, X, Upload } from 'lucide-vue-next';
+import { Camera, X, Upload, Check } from 'lucide-vue-next';
+import { Cropper } from 'vue-advanced-cropper';
+import 'vue-advanced-cropper/dist/style.css';
 
 const props = defineProps<{
   modelValue?: string;
@@ -13,16 +15,18 @@ const emit = defineEmits<{
 }>();
 
 const preview = ref(props.modelValue || '');
+const showCropper = ref(false);
+const rawImage = ref('');
 const fileInput = ref<HTMLInputElement | null>(null);
+const cropperRef = ref<any>(null);
 
 const handleFileChange = (e: Event) => {
   const file = (e.target as HTMLInputElement).files?.[0];
   if (file) {
     const reader = new FileReader();
     reader.onload = (event) => {
-      const result = event.target?.result as string;
-      preview.value = result;
-      emit('update:modelValue', result);
+      rawImage.value = event.target?.result as string;
+      showCropper.value = true;
     };
     reader.readAsDataURL(file);
   }
@@ -30,6 +34,18 @@ const handleFileChange = (e: Event) => {
 
 const triggerUpload = () => {
   fileInput.value?.click();
+};
+
+const cropImage = () => {
+  if (cropperRef.value) {
+    const { canvas } = cropperRef.value.getResult();
+    if (canvas) {
+      const cropped = canvas.toDataURL();
+      preview.value = cropped;
+      emit('update:modelValue', cropped);
+      showCropper.value = false;
+    }
+  }
 };
 
 const removeImage = () => {
@@ -81,5 +97,53 @@ const removeImage = () => {
         <X :size="14" />
       </button>
     </div>
+
+    <!-- Cropping Modal -->
+    <Teleport to="body">
+      <div v-if="showCropper" class="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10 bg-black/80 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-2xl rounded-[2.5rem] overflow-hidden flex flex-col max-h-[90vh]">
+          <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="text-xl font-extrabold text-primary">Cadre ta photo</h3>
+            <button @click="showCropper = false" class="p-2 hover:bg-gray-100 rounded-full transition-all">
+              <X :size="20" />
+            </button>
+          </div>
+          
+          <div class="flex-grow overflow-hidden bg-gray-900 flex items-center justify-center">
+            <Cropper
+              ref="cropperRef"
+              :src="rawImage"
+              :stencil-props="{
+                aspectRatio: shape === 'circle' || shape === 'square' ? 1/1 : 16/9,
+              }"
+              class="w-full h-full"
+            />
+          </div>
+
+          <div class="p-6 bg-gray-50 flex gap-4">
+            <button 
+              @click="showCropper = false" 
+              class="flex-grow py-3 rounded-xl font-bold text-gray-500 hover:bg-gray-200 transition-all"
+            >
+              Annuler
+            </button>
+            <button 
+              @click="cropImage" 
+              class="flex-grow py-3 rounded-xl font-bold bg-primary text-white shadow-lg shadow-primary/20 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all"
+            >
+              <Check :size="20" /> Valider
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
+
+<style scoped>
+.cropper {
+	height: 600px;
+	width: 600px;
+	background: #DDD;
+}
+</style>

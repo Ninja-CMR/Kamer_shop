@@ -11,6 +11,14 @@ export interface Product {
     inStock: boolean;
 }
 
+export interface Section {
+    id: string;
+    name: string;
+    description: string;
+    coverImage: string;
+    productIds: string[];
+}
+
 export interface ShopState {
     name: string;
     whatsapp: string;
@@ -22,6 +30,7 @@ export interface ShopState {
     deliveryModes: string[];
     paymentModes: string[];
     products: Product[];
+    sections: Section[];
     currentStep: number;
     isVerified: boolean;
     verificationCodeSent: boolean;
@@ -39,6 +48,7 @@ export const useShopStore = defineStore('shop', {
         deliveryModes: [],
         paymentModes: [],
         products: [],
+        sections: [],
         currentStep: 1,
         isVerified: false,
         verificationCodeSent: false,
@@ -58,6 +68,22 @@ export const useShopStore = defineStore('shop', {
         },
         removeProduct(id: string) {
             this.products = this.products.filter(p => p.id !== id);
+            // Remove from sections too
+            this.sections.forEach(s => {
+                s.productIds = s.productIds.filter(pid => pid !== id);
+            });
+        },
+        addSection(section: Section) {
+            this.sections.push(section);
+        },
+        updateSection(section: Section) {
+            const index = this.sections.findIndex(s => s.id === section.id);
+            if (index !== -1) {
+                this.sections[index] = section;
+            }
+        },
+        removeSection(id: string) {
+            this.sections = this.sections.filter(s => s.id !== id);
         },
         toggleStock(id: string) {
             const product = this.products.find(p => p.id === id);

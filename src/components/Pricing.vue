@@ -4,17 +4,18 @@ import Button from './Button.vue';
 
 const plans = [
   {
-    name: 'Le Test',
+    name: 'Le Lancement',
     price: '0',
-    duration: '7 jours',
-    description: 'Pour "voir" si c\'est bon avant de s\'engager.',
+    duration: 'Illimité',
+    description: 'Parce qu\'on veut que tu gagnes d\'abord avant de nous donner.',
     features: [
       'Boutique en ligne complète',
       'Catalogue illimité',
       'Commandes WhatsApp illimitées',
-      'Support par chat'
+      'Gestion des blocs (sections)',
+      'Image cropping inclus'
     ],
-    buttonText: 'Tester en 2-2',
+    buttonText: 'Lancer ma boutique (Gratuit)',
     variant: 'secondary' as const
   },
   {

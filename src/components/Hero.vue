@@ -20,6 +20,10 @@ import img3 from '../assets/heroSection/woman-shopping-thrift-store.jpg';
         
         <p class="mt-8 text-lg md:text-xl font-normal text-gray-600 max-w-2xl leading-relaxed">
           KamerShop est l'extension WhatsApp n°1 au Cameroun. Transforme ton business en catalogue propre, gère tes stocks et tes commandes sans chauffer la tête.
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-secondary/20 text-primary rounded-full text-xs font-black uppercase tracking-tighter ml-2">
+            <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+            C'est Gratuit !
+          </span>
         </p>
         
         <div class="mt-12 flex flex-col sm:flex-row items-center gap-4">

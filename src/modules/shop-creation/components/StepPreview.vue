@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ShoppingCart, MapPin, Clock, Truck, CreditCard, Info } from 'lucide-vue-next';
+import { ShoppingCart, MapPin, Clock, Truck, CreditCard, Info, ShoppingBag, Image as ImageIcon } from 'lucide-vue-next';
 import { useShopStore } from '../../../stores/shop';
 
 const store = useShopStore();
@@ -11,6 +11,10 @@ const getPaymentLabel = (id: string) => {
     'orange': 'Orange'
   };
   return modes[id] || id;
+};
+
+const getProduct = (id: string) => {
+  return store.products.find(p => p.id === id);
 };
 </script>
 
@@ -71,31 +75,76 @@ const getPaymentLabel = (id: string) => {
           <p class="text-sm">Ta boutique est vide...</p>
         </div>
         
-        <div 
-          v-for="product in store.products" 
-          :key="product.id"
-          class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-all flex flex-col"
-          :class="{ 'opacity-60 grayscale-[0.5]': !product.inStock }"
-        >
-          <div class="aspect-video w-full bg-gray-100 overflow-hidden relative">
-            <img v-if="product.image" :src="product.image" class="w-full h-full object-cover" />
-            <div v-else class="w-full h-full flex items-center justify-center text-gray-300">
-                <ShoppingBag :size="24" />
-            </div>
-            <div v-if="!product.inStock" class="absolute inset-0 bg-red-900/40 flex items-center justify-center text-white font-black text-xs uppercase tracking-widest">Épuisé</div>
-          </div>
-
-          <div class="p-3 flex items-center justify-between">
-            <div class="flex-grow">
-               <p class="font-bold text-sm text-primary line-clamp-1">{{ product.name }}</p>
-               <div class="flex items-center gap-2 mt-0.5">
-                 <p class="text-xs font-black text-secondary">{{ product.price }} FCFA</p>
-                 <p v-if="product.discountPrice" class="text-[10px] text-gray-400 line-through font-normal">{{ product.discountPrice }} FCFA</p>
+        <!-- Grouped by Sections -->
+        <div v-for="section in store.sections" :key="section.id" class="space-y-4 pt-4 border-t border-gray-100 first:border-t-0 first:pt-0">
+          <div class="space-y-1">
+            <div class="h-32 w-full rounded-2xl overflow-hidden relative border border-gray-100">
+               <img v-if="section.coverImage" :src="section.coverImage" class="w-full h-full object-cover" />
+               <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400">
+                  <ImageIcon :size="24" />
+               </div>
+               <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3">
+                  <h5 class="text-white font-black text-sm uppercase tracking-wider">{{ section.name }}</h5>
                </div>
             </div>
-            <button class="bg-primary text-white p-2 rounded-xl shadow-lg shadow-primary/20 flex-shrink-0">
-               <ShoppingCart :size="14" />
-            </button>
+            <p v-if="section.description" class="text-[10px] text-gray-500 font-medium italic px-1">{{ section.description }}</p>
+          </div>
+
+          <div class="grid grid-cols-1 gap-3">
+            <template v-for="productId in section.productIds" :key="productId">
+              <div 
+                v-if="getProduct(productId)"
+                class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex"
+              >
+                <div class="w-24 h-24 bg-gray-100 flex-shrink-0 relative">
+                  <img v-if="getProduct(productId)!.image" :src="getProduct(productId)!.image" class="w-full h-full object-cover" />
+                  <div v-if="!getProduct(productId)!.inStock" class="absolute inset-0 bg-red-900/40 flex items-center justify-center text-white font-black text-[8px] uppercase">Fini</div>
+                </div>
+                <div class="p-3 flex-grow flex flex-col justify-center min-w-0">
+                  <p class="font-bold text-xs text-primary truncate">{{ getProduct(productId)!.name }}</p>
+                  <div class="flex items-center gap-2 mt-0.5">
+                    <p class="text-[10px] font-black text-secondary">{{ getProduct(productId)!.price }} FCFA</p>
+                  </div>
+                </div>
+                <div class="flex items-center pr-3">
+                   <button class="bg-primary/5 text-primary p-2 rounded-xl">
+                      <ShoppingCart :size="12" />
+                   </button>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Remaining Products (Not in sections) -->
+        <div v-if="store.products.filter(p => !store.sections.some(s => s.productIds.includes(p.id))).length > 0" class="space-y-3">
+          <h5 class="text-xs font-black text-primary uppercase border-b border-gray-100 pb-2 mt-4">Autres articles</h5>
+          <div 
+            v-for="product in store.products.filter(p => !store.sections.some(s => s.productIds.includes(p.id)))" 
+            :key="product.id"
+            class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-all flex flex-col"
+            :class="{ 'opacity-60 grayscale-[0.5]': !product.inStock }"
+          >
+            <div class="aspect-video w-full bg-gray-100 overflow-hidden relative">
+              <img v-if="product.image" :src="product.image" class="w-full h-full object-cover" />
+              <div v-else class="w-full h-full flex items-center justify-center text-gray-300">
+                  <ShoppingBag :size="24" />
+              </div>
+              <div v-if="!product.inStock" class="absolute inset-0 bg-red-900/40 flex items-center justify-center text-white font-black text-xs uppercase tracking-widest">Épuisé</div>
+            </div>
+  
+            <div class="p-3 flex items-center justify-between">
+              <div class="flex-grow">
+                 <p class="font-bold text-sm text-primary line-clamp-1">{{ product.name }}</p>
+                 <div class="flex items-center gap-2 mt-0.5">
+                   <p class="text-xs font-black text-secondary">{{ product.price }} FCFA</p>
+                   <p v-if="product.discountPrice" class="text-[10px] text-gray-400 line-through font-normal">{{ product.discountPrice }} FCFA</p>
+                 </div>
+              </div>
+              <button class="bg-primary text-white p-2 rounded-xl shadow-lg shadow-primary/20 flex-shrink-0">
+                 <ShoppingCart :size="14" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
