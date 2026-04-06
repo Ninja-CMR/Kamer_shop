@@ -1,19 +1,17 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { Store, Menu, X } from 'lucide-vue-next';
+import { useShopStore } from '../stores/shop';
 import Button from './Button.vue';
 
+const store = useShopStore();
 const isMenuOpen = ref(false);
 
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value;
 };
 
-const navLinks = [
-  { name: 'Accueil', href: '#home' },
-  { name: 'Pourquoi nous ?', href: '#why-us' },
-  { name: 'Tarifs', href: '#pricing' },
-];
+
 </script>
 
 <template>
@@ -28,15 +26,20 @@ const navLinks = [
       
       <!-- Desktop Links -->
       <div class="hidden md:flex items-center gap-8">
-        <a v-for="link in navLinks" :key="link.name" :href="link.href" class="text-sm font-normal text-gray-600 hover:text-primary transition-colors">
-          {{ link.name }}
-        </a>
+        <router-link to="/" class="text-sm font-normal text-gray-600 hover:text-primary transition-colors">Accueil</router-link>
+        <router-link to="/#why-us" class="text-sm font-normal text-gray-600 hover:text-primary transition-colors">Pourquoi nous ?</router-link>
+        <router-link to="/#pricing" class="text-sm font-normal text-gray-600 hover:text-primary transition-colors">Tarifs</router-link>
       </div>
       
-      <div class="hidden md:block">
-        <Button size="sm" variant="primary">
-          Créer ma boutique gratuite
-        </Button>
+      <div class="hidden md:flex items-center gap-4">
+        <router-link v-if="store.name" to="/dashboard">
+          <Button size="sm" variant="secondary" class="font-bold border-2 border-primary/10">Mon Dashboard</Button>
+        </router-link>
+        <router-link to="/create-shop">
+          <Button size="sm" variant="primary" class="font-extrabold shadow-lg shadow-primary/20">
+            Créer ma boutique
+          </Button>
+        </router-link>
       </div>
 
       <!-- Mobile Menu Toggle -->
@@ -48,19 +51,15 @@ const navLinks = [
     <!-- Mobile Menu Overlay -->
     <div v-if="isMenuOpen" class="md:hidden absolute top-full left-0 w-full bg-white border-b border-gray-100 shadow-xl py-6 px-6 space-y-6 animate-in slide-in-from-top duration-300">
       <div class="flex flex-col gap-4">
-        <a 
-          v-for="link in navLinks" 
-          :key="link.name" 
-          :href="link.href" 
-          class="text-lg font-bold text-primary"
-          @click="isMenuOpen = false"
-        >
-          {{ link.name }}
-        </a>
+        <router-link to="/" class="text-lg font-bold text-primary" @click="isMenuOpen = false">Accueil</router-link>
+        <router-link v-if="store.name" to="/dashboard" class="text-lg font-bold text-primary" @click="isMenuOpen = false">Mon Dashboard</router-link>
+        <router-link to="/create-shop" class="text-lg font-bold text-primary" @click="isMenuOpen = false">Créer ma boutique</router-link>
       </div>
-      <Button size="lg" variant="primary" class="w-full">
-        Créer ma boutique gratuite
-      </Button>
+      <router-link to="/create-shop" @click="isMenuOpen = false">
+        <Button size="lg" variant="primary" class="w-full">
+          Lancer ma boutique
+        </Button>
+      </router-link>
     </div>
   </nav>
 </template>

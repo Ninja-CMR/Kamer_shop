@@ -23,6 +23,8 @@ export interface ShopState {
     paymentModes: string[];
     products: Product[];
     currentStep: number;
+    isVerified: boolean;
+    verificationCodeSent: boolean;
 }
 
 export const useShopStore = defineStore('shop', {
@@ -38,6 +40,8 @@ export const useShopStore = defineStore('shop', {
         paymentModes: [],
         products: [],
         currentStep: 1,
+        isVerified: false,
+        verificationCodeSent: false,
     }),
     actions: {
         updateBasicInfo(info: Partial<ShopState>) {
@@ -45,6 +49,12 @@ export const useShopStore = defineStore('shop', {
         },
         addProduct(product: Product) {
             this.products.push(product);
+        },
+        updateProduct(product: Product) {
+            const index = this.products.findIndex(p => p.id === product.id);
+            if (index !== -1) {
+                this.products[index] = product;
+            }
         },
         removeProduct(id: string) {
             this.products = this.products.filter(p => p.id !== id);
@@ -61,6 +71,18 @@ export const useShopStore = defineStore('shop', {
         },
         prevStep() {
             this.currentStep--;
+        },
+        sendVerificationCode() {
+            this.verificationCodeSent = true;
+            // Mock sending code
+            console.log('Code envoyé au ' + this.whatsapp);
+        },
+        verifyCode(code: string) {
+            if (code === '1234') { // Mock logic
+                this.isVerified = true;
+                return true;
+            }
+            return false;
         }
     }
 });

@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { Plus, Trash2, Package, Tag, ShoppingBag } from 'lucide-vue-next';
 import { useShopStore, type Product } from '../../../stores/shop';
+import ImageUpload from '../../../components/ImageUpload.vue';
 
 const store = useShopStore();
 const newProduct = ref<Partial<Product>>({
@@ -44,64 +45,75 @@ const addProduct = () => {
     </div>
 
     <!-- Add Product Form -->
-    <div class="bg-gray-50 p-6 rounded-[2rem] border border-gray-100 space-y-4">
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <!-- Nom -->
-        <div class="space-y-2">
-          <label class="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
-            <ShoppingBag :size="12" /> Nom du produit *
-          </label>
-          <input 
-            v-model="newProduct.name"
-            type="text" 
-            placeholder="Ex: Ndolé spécial, Robe pagne..."
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none font-normal focus:border-primary"
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Image Upload -->
+        <div class="md:col-span-1">
+          <ImageUpload 
+            v-model="newProduct.image"
+            label="Photo du produit"
           />
         </div>
-        
-        <!-- Prix -->
-        <div class="space-y-2">
-          <label class="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
-            <Tag :size="12" /> Prix (FCFA) *
-          </label>
-          <div class="flex gap-2">
-            <input 
-              v-model.number="newProduct.price"
-              type="number" 
-              placeholder="Prix"
-              class="w-1/2 px-4 py-3 rounded-xl border border-gray-200 outline-none font-normal focus:border-primary"
-            />
-            <input 
-              v-model.number="newProduct.discountPrice"
-              type="number" 
-              placeholder="Prix barré"
-              class="w-1/2 px-4 py-3 rounded-xl border border-gray-200 outline-none font-normal focus:border-primary italic opacity-60"
-            />
-          </div>
-        </div>
-      </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <!-- Catégorie -->
-        <div class="space-y-2">
-          <label class="text-xs font-bold text-gray-500 uppercase">Catégorie du produit</label>
-          <input 
-            v-model="newProduct.category"
-            type="text" 
-            placeholder="Ex: Plats, Boissons..."
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none font-normal focus:border-primary"
-          />
-        </div>
-        
-        <!-- Description -->
-        <div class="space-y-2">
-          <label class="text-xs font-bold text-gray-500 uppercase">Description / Détails</label>
-          <input 
-            v-model="newProduct.description"
-            type="text" 
-            placeholder="Taille, ingrédients..."
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none font-normal focus:border-primary"
-          />
+        <div class="md:col-span-2 space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Nom -->
+            <div class="space-y-2">
+              <label class="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
+                <ShoppingBag :size="12" /> Nom du produit *
+              </label>
+              <input 
+                v-model="newProduct.name"
+                type="text" 
+                placeholder="Ex: Ndolé spécial, Robe pagne..."
+                class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none font-normal focus:border-primary"
+              />
+            </div>
+            
+            <!-- Prix -->
+            <div class="space-y-2">
+              <label class="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
+                <Tag :size="12" /> Prix (FCFA) *
+              </label>
+              <div class="flex gap-2">
+                <input 
+                  v-model.number="newProduct.price"
+                  type="number" 
+                  placeholder="Prix"
+                  class="w-1/2 px-4 py-3 rounded-xl border border-gray-200 outline-none font-normal focus:border-primary"
+                />
+                <input 
+                  v-model.number="newProduct.discountPrice"
+                  type="number" 
+                  placeholder="Promo"
+                  class="w-1/2 px-4 py-3 rounded-xl border border-gray-200 outline-none font-normal focus:border-primary italic opacity-60"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Catégorie -->
+            <div class="space-y-2">
+              <label class="text-xs font-bold text-gray-500 uppercase">Catégorie</label>
+              <input 
+                v-model="newProduct.category"
+                type="text" 
+                placeholder="Ex: Plats, Boissons..."
+                class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none font-normal focus:border-primary"
+              />
+            </div>
+            
+            <!-- Description -->
+            <div class="space-y-2">
+              <label class="text-xs font-bold text-gray-500 uppercase">Détails</label>
+              <input 
+                v-model="newProduct.description"
+                type="text" 
+                placeholder="Taille, ingrédients..."
+                class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none font-normal focus:border-primary"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -154,7 +166,6 @@ const addProduct = () => {
         </div>
       </div>
     </div>
-  </div>
 </template>
 
 <style scoped>

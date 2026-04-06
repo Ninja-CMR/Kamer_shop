@@ -13,6 +13,11 @@ const routes = [
         name: 'CreateShop',
         component: CreateShopView,
     },
+    {
+        path: '/dashboard',
+        name: 'Dashboard',
+        component: () => import('../views/DashboardView.vue'),
+    },
 ];
 
 const router = createRouter({

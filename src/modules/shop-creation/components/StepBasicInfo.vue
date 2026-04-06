@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useShopStore } from '../../../stores/shop';
+import ImageUpload from '../../../components/ImageUpload.vue';
 
 const store = useShopStore();
 
@@ -82,17 +83,13 @@ const categories = [
         />
       </div>
 
-      <!-- Logo Mockup -->
+      <!-- Logo -->
       <div class="space-y-2">
-        <label class="flex items-center gap-2 text-sm font-bold text-gray-700">
-          <span>🖼️</span> Photo / logo de boutique
-        </label>
-        <div class="flex items-center gap-4">
-          <div class="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 border border-dashed border-gray-300">
-             <span>+</span>
-          </div>
-          <span class="text-xs text-gray-400 font-normal italic">JPEG ou PNG accepté</span>
-        </div>
+        <ImageUpload 
+          v-model="store.logo"
+          label="Photo / logo de boutique"
+          shape="rectangle"
+        />
       </div>
     </div>
 
