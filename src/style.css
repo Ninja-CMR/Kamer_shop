@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #005F54;
+  --color-primary-light: #00BFA5;
+  --color-primary-dark: #004D40;
+  --color-secondary: #00E676;
+  --color-secondary-light: #00FFA3;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+:root {
+  font-family: "Inter", system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  /* Regular for body text */
+
+  background-color: #ffffff;
+  color: #1a1a1a;
+}
+
+body {
+  margin: 0;
+  display: block;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#app {
+  width: 100%;
+}
+
+.title-gradient {
+  background: linear-gradient(135deg, #005F54 0%, #00BFA5 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
