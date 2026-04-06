@@ -1,6 +1,8 @@
 import { computed } from 'vue';
 import { useShopStore } from '../stores/shop';
 
+export const TOTAL_STEPS = 5;
+
 export function useShopWizard() {
     const store = useShopStore();
 
@@ -15,9 +17,9 @@ export function useShopWizard() {
             case 2:
                 return store.products.length >= 1;
             case 3:
-                return true; // Sections are optional but recommended
+                return true; // Verification step
             case 4:
-                return store.deliveryModes.length > 0 && store.paymentModes.length > 0;
+                return true; // Preview step
             case 5:
                 return store.isVerified;
             default:

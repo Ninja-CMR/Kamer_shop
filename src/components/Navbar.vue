@@ -32,14 +32,18 @@ const toggleMenu = () => {
       </div>
       
       <div class="hidden md:flex items-center gap-4">
-        <router-link v-if="store.name" to="/dashboard">
-          <Button size="sm" variant="secondary" class="font-bold border-2 border-primary/10">Mon Dashboard</Button>
-        </router-link>
-        <router-link to="/create-shop">
-          <Button size="sm" variant="primary" class="font-extrabold shadow-lg shadow-primary/20">
-            Créer ma boutique
-          </Button>
-        </router-link>
+        <template v-if="store.name">
+          <router-link to="/dashboard">
+            <Button size="sm" variant="secondary" class="font-bold border-2 border-primary/10">Mon Dashboard</Button>
+          </router-link>
+        </template>
+        <template v-else>
+          <router-link to="/create-shop">
+            <Button size="sm" variant="primary" class="font-extrabold shadow-lg shadow-primary/20">
+              Créer ma boutique
+            </Button>
+          </router-link>
+        </template>
       </div>
 
       <!-- Mobile Menu Toggle -->
@@ -52,12 +56,23 @@ const toggleMenu = () => {
     <div v-if="isMenuOpen" class="md:hidden absolute top-full left-0 w-full bg-white border-b border-gray-100 shadow-xl py-6 px-6 space-y-6 animate-in slide-in-from-top duration-300">
       <div class="flex flex-col gap-4">
         <router-link to="/" class="text-lg font-bold text-primary" @click="isMenuOpen = false">Accueil</router-link>
-        <router-link v-if="store.name" to="/dashboard" class="text-lg font-bold text-primary" @click="isMenuOpen = false">Mon Dashboard</router-link>
-        <router-link to="/create-shop" class="text-lg font-bold text-primary" @click="isMenuOpen = false">Créer ma boutique</router-link>
+        <template v-if="store.name">
+           <router-link to="/dashboard" class="text-lg font-bold text-primary flex items-center justify-between" @click="isMenuOpen = false">
+             Mon Dashboard
+           </router-link>
+           <div class="pl-4 space-y-3 pt-2 border-l-2 border-gray-100">
+              <router-link to="/dashboard?tab=products" class="block text-sm font-bold text-gray-500" @click="isMenuOpen = false">Gestion Stock</router-link>
+              <router-link to="/dashboard?tab=sections" class="block text-sm font-bold text-gray-500" @click="isMenuOpen = false">Gestion Blocs</router-link>
+              <router-link to="/dashboard?tab=settings" class="block text-sm font-bold text-gray-500" @click="isMenuOpen = false">Réglages</router-link>
+           </div>
+        </template>
+        <template v-else>
+           <router-link to="/create-shop" class="text-lg font-bold text-primary" @click="isMenuOpen = false">Créer ma boutique</router-link>
+        </template>
       </div>
-      <router-link to="/create-shop" @click="isMenuOpen = false">
+      <router-link :to="store.name ? '/dashboard' : '/create-shop'" @click="isMenuOpen = false">
         <Button size="lg" variant="primary" class="w-full">
-          Lancer ma boutique
+          {{ store.name ? 'Gérer ma boutique' : 'Lancer ma boutique' }}
         </Button>
       </router-link>
     </div>

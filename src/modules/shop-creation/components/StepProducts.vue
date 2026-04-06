@@ -136,9 +136,15 @@ const addProduct = () => {
       <div 
         v-for="product in store.products" 
         :key="product.id"
-        class="flex items-center justify-between p-5 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-primary/30 transition-colors group"
+        class="flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-primary/30 transition-colors group"
       >
-        <div class="flex-grow">
+        <div class="w-16 h-16 rounded-xl bg-gray-50 overflow-hidden flex-shrink-0 border border-gray-50">
+            <img v-if="product.image" :src="product.image" class="w-full h-full object-cover" />
+            <div v-else class="w-full h-full flex items-center justify-center text-gray-200">
+                <Package :size="24" />
+            </div>
+        </div>
+        <div class="flex-grow min-w-0">
           <div class="flex items-center gap-2">
             <h4 class="font-bold text-primary">{{ product.name }}</h4>
             <span v-if="product.category" class="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full font-bold uppercase">{{ product.category }}</span>

@@ -2,10 +2,9 @@
 import { useShopWizard } from '../../../composables/useShopWizard';
 import StepBasicInfo from './StepBasicInfo.vue';
 import StepProducts from './StepProducts.vue';
-import StepSections from './StepSections.vue';
-import StepOptions from './StepOptions.vue';
 import StepVerification from './StepVerification.vue';
 import StepPreview from './StepPreview.vue';
+import StepSuccess from './StepSuccess.vue';
 import Button from '../../../components/Button.vue';
 import { useRouter } from 'vue-router';
 
@@ -28,7 +27,7 @@ const submit = () => {
       ></div>
       
       <div 
-        v-for="i in 6" 
+        v-for="i in 5" 
         :key="i"
         class="relative z-10 w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all duration-500"
         :class="[store.currentStep >= i ? 'bg-primary text-white scale-110 shadow-lg' : 'bg-white border-2 border-gray-200 text-gray-400']"
@@ -40,17 +39,16 @@ const submit = () => {
     <!-- Step Content -->
     <div class="min-h-[450px]">
       <StepBasicInfo v-if="store.currentStep === 1" />
-      <StepProducts v-if="store.currentStep === 2" />
-      <StepSections v-if="store.currentStep === 3" />
-      <StepOptions v-if="store.currentStep === 4" />
-      <StepVerification v-if="store.currentStep === 5" />
-      <StepPreview v-if="store.currentStep === 6" />
+      <StepProducts v-else-if="store.currentStep === 2" />
+      <StepVerification v-else-if="store.currentStep === 3" />
+      <StepPreview v-else-if="store.currentStep === 4" />
+      <StepSuccess v-else-if="store.currentStep === 5" />
     </div>
 
     <!-- Navigation Buttons -->
     <div class="flex items-center justify-between mt-12 pt-8 border-t border-gray-100">
       <button 
-        v-if="store.currentStep > 1"
+        v-if="store.currentStep > 1 && store.currentStep < 5"
         @click="prev"
         class="text-gray-500 font-bold hover:text-primary transition-colors"
       >

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { useShopStore, type Product, type Section } from '../stores/shop';
+import { useRoute } from 'vue-router';
 import { 
   LayoutDashboard, 
   Package, 
@@ -18,9 +19,23 @@ import {
 } from 'lucide-vue-next';
 import ImageUpload from '../components/ImageUpload.vue';
 import Button from '../components/Button.vue';
+import BottomNav from '../components/BottomNav.vue';
 
 const store = useShopStore();
-const activeTab = ref('products'); // 'overview', 'products', 'settings'
+const route = useRoute();
+const activeTab = ref('overview'); // Default to overview
+
+onMounted(() => {
+  if (route.query.tab) {
+    activeTab.value = route.query.tab as string;
+  }
+});
+
+watch(() => route.query.tab, (newTab) => {
+  if (newTab) {
+    activeTab.value = newTab as string;
+  }
+});
 
 // Product Form Modal state
 const showProductModal = ref(false);
@@ -99,8 +114,8 @@ const toggleProductInSection = (productId: string) => {
 
 <template>
   <div class="min-h-screen bg-gray-50 flex">
-    <!-- Sidebar -->
-    <aside class="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col">
+    <!-- Sidebar (Desktop) -->
+    <aside class="hidden sm:block w-72 bg-white border-r border-gray-100 flex flex-col p-8 fixed h-full z-20">
       <div class="p-8">
         <h2 class="text-2xl font-black text-primary italic">KamerShop<span class="text-secondary text-xs not-italic ml-1">Pro</span></h2>
       </div>
@@ -135,7 +150,7 @@ const toggleProductInSection = (productId: string) => {
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-grow">
+    <main class="flex-grow p-4 sm:p-10 sm:ml-72 pb-32 sm:pb-10">
       <!-- Top Bar -->
       <header class="bg-white border-b border-gray-200 h-20 flex items-center justify-between px-8">
         <div class="flex items-center gap-4">
@@ -496,6 +511,9 @@ const toggleProductInSection = (productId: string) => {
             </div>
         </div>
     </Teleport>
+
+    <!-- Bottom Nav (Mobile) -->
+    <BottomNav v-model:activeTab="activeTab" />
   </div>
 </template>
 

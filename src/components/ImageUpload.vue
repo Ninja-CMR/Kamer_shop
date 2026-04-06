@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { Camera, X, Upload, Check } from 'lucide-vue-next';
 import { Cropper } from 'vue-advanced-cropper';
 import 'vue-advanced-cropper/dist/style.css';
@@ -19,6 +19,10 @@ const showCropper = ref(false);
 const rawImage = ref('');
 const fileInput = ref<HTMLInputElement | null>(null);
 const cropperRef = ref<any>(null);
+
+watch(() => props.modelValue, (newVal) => {
+  preview.value = newVal || '';
+});
 
 const handleFileChange = (e: Event) => {
   const file = (e.target as HTMLInputElement).files?.[0];
