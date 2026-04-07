@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Plus, Trash2, Package, Tag, ShoppingBag } from 'lucide-vue-next';
+import { Plus, Trash2, Package, Tag, ShoppingBag, Check, Edit3 } from 'lucide-vue-next';
 import { useShopStore, type Product } from '../../../stores/shop';
 import ImageUpload from '../../../components/ImageUpload.vue';
 
@@ -13,18 +13,42 @@ const newProduct = ref<Partial<Product>>({
   category: '',
   inStock: true
 });
+const isEditing = ref(false);
+const editingProductId = ref<string | null>(null);
+
+const editProduct = (product: Product) => {
+  newProduct.value = { ...product };
+  isEditing.value = true;
+  editingProductId.value = product.id;
+};
+
+const cancelEdit = () => {
+  newProduct.value = { name: '', price: 0, discountPrice: null, description: '', category: '', inStock: true };
+  isEditing.value = false;
+  editingProductId.value = null;
+};
 
 const addProduct = () => {
   if (newProduct.value.name && (newProduct.value.price || 0) > 0) {
-    store.addProduct({
-      id: Date.now().toString(),
-      name: newProduct.value.name!,
-      price: newProduct.value.price!,
-      discountPrice: newProduct.value.discountPrice,
-      description: newProduct.value.description,
-      category: newProduct.value.category,
-      inStock: true
-    });
+    if (isEditing.value && editingProductId.value) {
+      store.updateProduct({
+        ...newProduct.value as Product,
+        id: editingProductId.value
+      });
+      isEditing.value = false;
+      editingProductId.value = null;
+    } else {
+      store.addProduct({
+        id: Date.now().toString(),
+        name: newProduct.value.name!,
+        price: newProduct.value.price!,
+        discountPrice: newProduct.value.discountPrice,
+        description: newProduct.value.description,
+        category: newProduct.value.category,
+        image: newProduct.value.image,
+        inStock: true
+      });
+    }
     newProduct.value = { 
       name: '', 
       price: 0, 
@@ -117,13 +141,23 @@ const addProduct = () => {
         </div>
       </div>
 
-      <button 
-        @click="addProduct"
-        class="w-full bg-primary text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary-dark transition-all transform active:scale-95 shadow-lg shadow-primary/10"
-      >
-        <Plus :size="20" />
-        Ajouter à mon catalogue
-      </button>
+      <div class="flex gap-4">
+        <button 
+          @click="addProduct"
+          class="flex-grow bg-primary text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary-dark transition-all transform active:scale-95 shadow-lg shadow-primary/10"
+        >
+          <Plus v-if="!isEditing" :size="20" />
+          <Check v-else :size="20" />
+          {{ isEditing ? 'Sauvegarder' : 'Ajouter à mon catalogue' }}
+        </button>
+        <button 
+          v-if="isEditing"
+          @click="cancelEdit"
+          class="px-6 bg-gray-100 text-gray-500 py-4 rounded-xl font-bold hover:bg-gray-200 transition-all font-black text-xs uppercase"
+        >
+          Annuler
+        </button>
+      </div>
     </div>
 
     <!-- Product List -->
@@ -166,6 +200,10 @@ const addProduct = () => {
             {{ product.inStock ? 'En Stock' : 'Épuisé' }}
           </button>
           
+          <button @click="editProduct(product)" class="text-gray-300 p-2 hover:text-primary hover:bg-gray-50 rounded-lg transition-all group-hover:text-gray-500">
+            <Edit3 :size="18" />
+          </button>
+
           <button @click="store.removeProduct(product.id)" class="text-gray-300 p-2 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all group-hover:text-gray-500">
             <Trash2 :size="18" />
           </button>

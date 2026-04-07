@@ -9,6 +9,7 @@ export interface Product {
     category?: string;
     image?: string;
     inStock: boolean;
+    clicks?: number;
 }
 
 export interface Section {
@@ -34,6 +35,10 @@ export interface ShopState {
     currentStep: number;
     isVerified: boolean;
     verificationCodeSent: boolean;
+    stats: {
+        totalSales: number;
+        visitors: number;
+    };
 }
 
 export const useShopStore = defineStore('shop', {
@@ -52,10 +57,27 @@ export const useShopStore = defineStore('shop', {
         currentStep: 1,
         isVerified: false,
         verificationCodeSent: false,
+        stats: {
+            totalSales: 0,
+            visitors: 0,
+        },
     }),
     actions: {
         updateBasicInfo(info: Partial<ShopState>) {
             Object.assign(this, info);
+        },
+        incrementVisitors() {
+            this.stats.visitors++;
+        },
+        trackClick(productId: string) {
+            const product = this.products.find(p => p.id === productId);
+            if (product) {
+                product.clicks = (product.clicks || 0) + 1;
+                // Mock sales logic: 10% of clicks result in a sale for the totalSales stat
+                if (Math.random() > 0.9) {
+                    this.stats.totalSales += product.price;
+                }
+            }
         },
         addProduct(product: Product) {
             this.products.push(product);

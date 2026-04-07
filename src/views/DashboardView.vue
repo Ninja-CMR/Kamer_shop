@@ -8,7 +8,6 @@ import {
   Settings, 
   Plus, 
   TrendingUp, 
-  Users, 
   ShoppingBag,
   Share2,
   Pencil,
@@ -110,6 +109,11 @@ const toggleProductInSection = (productId: string) => {
     editingSection.value.productIds!.splice(index, 1);
   }
 };
+const saveSettings = () => {
+    // Basic info is already reactively linked to store via v-model
+    // but we can add a notification or additional logic here
+    alert('Réglages enregistrés !');
+};
 </script>
 
 <template>
@@ -155,7 +159,7 @@ const toggleProductInSection = (productId: string) => {
       <header class="bg-white border-b border-gray-200 h-20 flex items-center justify-between px-8">
         <div class="flex items-center gap-4">
             <h1 class="text-xl font-extrabold text-primary">{{ 
-              activeTab === 'overview' ? 'Résumé de la go' : 
+              activeTab === 'overview' ? 'Résumé de tes ways' : 
               activeTab === 'products' ? 'Catalogue Produits' : 'Configuration' 
             }}</h1>
         </div>
@@ -184,8 +188,8 @@ const toggleProductInSection = (productId: string) => {
                 <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between">
                     <div>
                         <p class="text-xs font-bold text-gray-400 uppercase">Vues de la boutique</p>
-                        <h3 class="text-3xl font-black text-primary mt-1">1,204</h3>
-                        <p class="text-[10px] text-green-500 font-bold mt-1">+12% cette semaine</p>
+                        <h3 class="text-3xl font-black text-primary mt-1">{{ store.stats.visitors }}</h3>
+                        <p class="text-[10px] text-green-500 font-bold mt-1">Visiteurs aujourd'hui</p>
                     </div>
                     <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center">
                         <TrendingUp :size="24" />
@@ -193,42 +197,48 @@ const toggleProductInSection = (productId: string) => {
                 </div>
                 <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-bold text-gray-400 uppercase">Commandes WhatsApp</p>
-                        <h3 class="text-3xl font-black text-primary mt-1">86</h3>
-                        <p class="text-[10px] text-primary font-bold mt-1">Gbich ! Ça chauffe</p>
+                        <p class="text-xs font-bold text-gray-400 uppercase">Ventes (FCFA)</p>
+                        <h3 class="text-3xl font-black text-primary mt-1">{{ store.stats.totalSales }}</h3>
+                        <p class="text-[10px] text-gray-400 font-bold mt-1">Gombos encaissés</p>
                     </div>
-                    <div class="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center">
+                    <div class="w-12 h-12 bg-secondary/10 text-primary rounded-2xl flex items-center justify-center">
                         <ShoppingBag :size="24" />
                     </div>
                 </div>
                 <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-bold text-gray-400 uppercase">Clients fidèles</p>
-                        <h3 class="text-3xl font-black text-primary mt-1">42</h3>
+                        <p class="text-xs font-bold text-gray-400 uppercase">Articles en ligne</p>
+                        <h3 class="text-3xl font-black text-primary mt-1">{{ store.products.length }}</h3>
+                        <p class="text-[10px] text-primary font-bold mt-1 inline-flex items-center gap-1">
+                            Articles actifs
+                        </p>
                     </div>
-                    <div class="w-12 h-12 bg-secondary/10 text-primary rounded-2xl flex items-center justify-center">
-                        <Users :size="24" />
+                    <div class="w-12 h-12 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center">
+                        <Package :size="24" />
                     </div>
                 </div>
             </div>
 
-            <!-- Recent Prods -->
+            <!-- Top Products -->
             <div class="bg-white rounded-[2.5rem] border border-gray-100 p-8">
                 <div class="flex items-center justify-between mb-8">
-                    <h3 class="text-xl font-extrabold text-primary">Tes Tops Produits</h3>
+                    <h3 class="text-xl font-extrabold text-primary">Tes Ways du moment</h3>
                     <button @click="activeTab = 'products'" class="text-primary font-bold text-sm">Voir tout</button>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div v-for="p in store.products.slice(0, 4)" :key="p.id" class="space-y-3">
-                        <div class="aspect-square rounded-2xl bg-gray-100 overflow-hidden border border-gray-100 relative">
-                            <img v-if="p.image" :src="p.image" class="w-full h-full object-cover" />
-                            <div v-else class="w-full h-full flex items-center justify-center text-gray-300">
+                <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div v-for="p in [...store.products].sort((a,b) => (b.clicks||0) - (a.clicks||0)).slice(0, 4)" :key="p.id" class="space-y-3">
+                        <div class="aspect-square rounded-2xl bg-gray-50 overflow-hidden border border-gray-100 relative group">
+                            <img v-if="p.image" :src="p.image" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                            <div v-else class="w-full h-full flex items-center justify-center text-gray-200">
                                 <Package :size="32" />
                             </div>
-                            <div v-if="p.discountPrice" class="absolute top-2 right-2 bg-secondary text-primary text-[10px] font-black px-2 py-1 rounded-lg">PROMO</div>
+                            <div v-if="p.discountPrice" class="absolute top-2 right-2 bg-secondary text-primary text-[8px] font-black px-2 py-1 rounded-lg">PROMO</div>
+                            <div class="absolute bottom-2 left-2 bg-black/40 backdrop-blur-md text-white text-[8px] font-black px-2 py-1 rounded-lg flex items-center gap-1">
+                                <TrendingUp :size="8" /> {{ p.clicks || 0 }} clics
+                            </div>
                         </div>
-                        <div>
-                            <p class="font-bold text-primary truncate">{{ p.name }}</p>
+                        <div class="px-1">
+                            <p class="font-bold text-primary truncate text-sm">{{ p.name }}</p>
                             <p class="text-xs font-bold text-secondary">{{ p.price }} FCFA</p>
                         </div>
                     </div>
@@ -398,7 +408,7 @@ const toggleProductInSection = (productId: string) => {
                     <textarea v-model="store.description" rows="3" class="w-full px-4 py-4 rounded-xl bg-gray-50 border border-gray-100 font-normal outline-none focus:border-primary resize-none"></textarea>
                 </div>
 
-                <Button variant="primary" class="w-full py-4 text-lg">Enregistrer les changements</Button>
+                <Button @click="saveSettings" variant="primary" class="w-full py-4 text-lg">Enregistrer les changements</Button>
             </div>
         </div>
       </div>
@@ -412,7 +422,7 @@ const toggleProductInSection = (productId: string) => {
                 <button @click="showProductModal = false" class="p-2 hover:bg-gray-200 rounded-full transition-all"><Trash2 :size="20" class="rotate-45" /></button>
             </div>
             
-            <div class="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            <div class="p-4 sm:p-8 space-y-6 max-h-[60vh] sm:max-h-[70vh] overflow-y-auto custom-scrollbar">
                 <ImageUpload v-model="editingProduct!.image" label="Photo de l'article" />
                 
                 <div class="space-y-4">
@@ -467,7 +477,7 @@ const toggleProductInSection = (productId: string) => {
                     </button>
                 </div>
 
-                <div class="p-8 space-y-6 overflow-y-auto custom-scrollbar">
+                <div class="p-8 space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
                     <ImageUpload v-model="editingSection!.coverImage" label="Photo de couverture du bloc" />
 
                     <div class="space-y-4">

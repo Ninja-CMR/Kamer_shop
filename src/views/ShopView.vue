@@ -1,8 +1,13 @@
 <script setup lang="ts">
+import { onMounted } from 'vue';
 import { useShopStore } from '../stores/shop';
 import { ShoppingCart, MapPin, Clock, Truck, CreditCard, ChevronRight, ShoppingBag, Image as ImageIcon } from 'lucide-vue-next';
 
 const store = useShopStore();
+
+onMounted(() => {
+    store.incrementVisitors();
+});
 
 const getPaymentLabel = (id: string) => {
   const modes: Record<string, string> = {
@@ -17,7 +22,8 @@ const getProduct = (id: string) => {
   return store.products.find(p => p.id === id);
 };
 
-const sendWhatsApp = (productName: string, price: number) => {
+const sendWhatsApp = (productId: string, productName: string, price: number) => {
+    store.trackClick(productId);
     const text = `Salut ! Je suis intéressé par "${productName}" (${price} FCFA) dans ta boutique ${store.name}. Est-ce disponible ?`;
     window.open(`https://wa.me/${store.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
 };
@@ -25,30 +31,26 @@ const sendWhatsApp = (productName: string, price: number) => {
 
 <template>
   <div class="min-h-screen bg-gray-50 pb-24">
-    <!-- Shop Header -->
-    <header class="bg-primary pt-16 pb-12 px-6 text-white relative overflow-hidden">
-      <!-- Decorative blobs -->
-      <div class="absolute -top-10 -right-10 w-64 h-64 bg-secondary/10 rounded-full blur-3xl"></div>
-      <div class="absolute -bottom-10 -left-10 w-48 h-48 bg-white/5 rounded-full blur-3xl"></div>
-
-      <div class="max-w-4xl mx-auto relative z-10 text-center flex flex-col items-center">
-        <div class="w-24 h-24 md:w-32 md:h-32 rounded-[2.5rem] bg-white/20 backdrop-blur-md flex items-center justify-center text-4xl border-2 border-white/30 overflow-hidden shadow-2xl mb-6">
+    <!-- Shop Header (Minimalist) -->
+    <header class="pt-20 pb-10 px-6 bg-white border-b border-gray-100">
+      <div class="max-w-4xl mx-auto flex flex-col items-center text-center">
+        <div class="w-24 h-24 md:w-32 md:h-32 rounded-[2.5rem] bg-gray-50 flex items-center justify-center text-4xl border border-gray-100 overflow-hidden shadow-xl mb-6">
           <img v-if="store.logo" :src="store.logo" class="w-full h-full object-cover" />
           <span v-else>{{ store.name ? store.name.charAt(0).toUpperCase() : '🏪' }}</span>
         </div>
         
-        <h1 class="text-3xl md:text-5xl font-black mb-3 italic tracking-tight">{{ store.name || 'Ma Boutique' }}</h1>
-        <p v-if="store.description" class="text-sm md:text-base font-medium opacity-90 max-w-xl mx-auto mb-6">{{ store.description }}</p>
+        <h1 class="text-3xl md:text-5xl font-black mb-2 text-primary tracking-tight">{{ store.name || 'Ma Boutique' }}</h1>
+        <p v-if="store.description" class="text-xs md:text-sm font-medium text-gray-500 max-w-xl mx-auto mb-6 italic">" {{ store.description }} "</p>
         
-        <div class="flex flex-wrap justify-center gap-4 text-[10px] md:text-xs font-black uppercase tracking-wider">
-           <div v-if="store.zone" class="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/10">
-              <MapPin :size="12" /> {{ store.zone }}
+        <div class="flex flex-wrap justify-center gap-3 text-[10px] font-black uppercase tracking-wider">
+           <div v-if="store.zone" class="flex items-center gap-1.5 bg-primary/5 text-primary px-3 py-1.5 rounded-full border border-primary/10">
+              <MapPin :size="10" /> {{ store.zone }}
            </div>
-           <div v-if="store.hours" class="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/10">
-              <Clock :size="12" /> {{ store.hours }}
+           <div v-if="store.hours" class="flex items-center gap-1.5 bg-gray-100 text-gray-400 px-3 py-1.5 rounded-full border border-gray-200">
+              <Clock :size="10" /> {{ store.hours }}
            </div>
            <div v-if="store.deliveryModes.length > 0" class="flex items-center gap-1.5 bg-secondary text-primary px-3 py-1.5 rounded-full shadow-lg">
-              <Truck :size="12" /> Livraison
+              <Truck :size="10" /> Livraison dispo
            </div>
         </div>
       </div>
@@ -57,10 +59,10 @@ const sendWhatsApp = (productName: string, price: number) => {
     <!-- Main Content -->
     <main class="max-w-4xl mx-auto px-4 md:px-6 -mt-8 space-y-12">
       <!-- Info Badges -->
-      <div v-if="store.paymentModes.length > 0" class="bg-white p-4 rounded-3xl shadow-xl border border-gray-100 flex items-center justify-center gap-2">
-         <CreditCard :size="18" class="text-primary" />
-         <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">Paiement : {{ store.paymentModes.map(m => getPaymentLabel(m)).join(', ') }}</span>
-      </div>
+       <div v-if="store.paymentModes.length > 0" class="flex items-center justify-center gap-2">
+          <CreditCard :size="12" class="text-gray-400" />
+          <span class="text-[8px] font-bold text-gray-400 uppercase tracking-[0.2em]">{{ store.paymentModes.map(m => getPaymentLabel(m)).join(' • ') }}</span>
+       </div>
 
       <!-- Sections -->
       <template v-for="section in store.sections" :key="section.id">
@@ -99,7 +101,7 @@ const sendWhatsApp = (productName: string, price: number) => {
                       </div>
                   </div>
                   <button 
-                      @click="sendWhatsApp(getProduct(productId)!.name, getProduct(productId)!.price)"
+                      @click="sendWhatsApp(getProduct(productId)!.id, getProduct(productId)!.name, getProduct(productId)!.price)"
                       class="p-3 bg-primary text-white rounded-2xl shadow-lg shadow-primary/20 hover:scale-110 active:scale-95 transition-all flex-shrink-0"
                   >
                       <ShoppingCart :size="20" />
@@ -141,7 +143,7 @@ const sendWhatsApp = (productName: string, price: number) => {
                             <span v-if="p.discountPrice" class="text-xs text-gray-300 line-through">{{ p.discountPrice }} FCFA</span>
                         </div>
                         <button 
-                            @click="sendWhatsApp(p.name, p.price)"
+                            @click="sendWhatsApp(p.id, p.name, p.price)"
                             class="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-black text-xs shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
                         >
                             <ShoppingCart :size="16" /> Commander
