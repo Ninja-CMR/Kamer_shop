@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { Camera, X, Upload, Check } from 'lucide-vue-next';
+import { Camera, Trash2, Upload, Check } from 'lucide-vue-next';
 import { Cropper } from 'vue-advanced-cropper';
 import 'vue-advanced-cropper/dist/style.css';
 
@@ -19,6 +19,7 @@ const showCropper = ref(false);
 const rawImage = ref('');
 const fileInput = ref<HTMLInputElement | null>(null);
 const cropperRef = ref<any>(null);
+const isFreeCrop = ref(false);
 
 watch(() => props.modelValue, (newVal) => {
   preview.value = newVal || '';
@@ -88,17 +89,19 @@ const removeImage = () => {
       </div>
 
       <!-- Overlays -->
-      <div v-if="preview" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-        <Camera :size="24" class="text-white" />
+      <div v-if="preview" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
+        <Camera :size="shape === 'circle' ? 32 : 24" class="text-white mb-1" />
+        <p v-if="shape === 'circle'" class="text-[8px] text-white font-black uppercase">Modifier</p>
       </div>
 
       <!-- Delete Button -->
       <button 
         v-if="preview"
         @click.stop="removeImage"
-        class="absolute top-2 right-2 p-1 bg-white rounded-full shadow-lg text-red-500 hover:scale-110 transition-transform"
+        class="absolute p-2 bg-white rounded-full shadow-xl text-red-500 hover:scale-110 transition-all z-10"
+        :class="[shape === 'circle' ? 'bottom-0 right-0 border-2 border-white' : 'top-2 right-2 shadow-lg']"
       >
-        <X :size="14" />
+        <Trash2 :size="14" />
       </button>
     </div>
 
@@ -118,22 +121,30 @@ const removeImage = () => {
               ref="cropperRef"
               :src="rawImage"
               :stencil-props="{
-                aspectRatio: shape === 'circle' || shape === 'square' ? 1/1 : 16/9,
+                aspectRatio: isFreeCrop ? 0 : (shape === 'circle' || shape === 'square' ? 1/1 : 16/9),
               }"
               class="w-full h-full"
             />
           </div>
 
-          <div class="p-6 bg-gray-50 flex gap-4">
+          <div class="p-6 bg-gray-50 flex items-center gap-4">
+            <button 
+              @click="isFreeCrop = !isFreeCrop"
+              class="px-4 py-3 rounded-xl font-bold border-2 transition-all flex items-center gap-2"
+              :class="[isFreeCrop ? 'bg-primary/10 border-primary text-primary' : 'bg-white border-gray-100 text-gray-400']"
+            >
+              {{ isFreeCrop ? 'Ratio Libre' : 'Ratio Fixe' }}
+            </button>
+            <div class="flex-grow"></div>
             <button 
               @click="showCropper = false" 
-              class="flex-grow py-3 rounded-xl font-bold text-gray-500 hover:bg-gray-200 transition-all"
+              class="px-6 py-3 rounded-xl font-bold text-gray-500 hover:bg-gray-200 transition-all font-black text-xs uppercase"
             >
               Annuler
             </button>
             <button 
               @click="cropImage" 
-              class="flex-grow py-3 rounded-xl font-bold bg-primary text-white shadow-lg shadow-primary/20 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all"
+              class="px-10 py-3 rounded-xl font-bold bg-primary text-white shadow-lg shadow-primary/20 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all"
             >
               <Check :size="20" /> Valider
             </button>

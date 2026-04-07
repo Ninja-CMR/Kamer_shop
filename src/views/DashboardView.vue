@@ -14,6 +14,7 @@ import {
   Trash2,
   Folder,
   Check,
+  X,
   Image as ImageIcon
 } from 'lucide-vue-next';
 import ImageUpload from '../components/ImageUpload.vue';
@@ -77,7 +78,7 @@ const shareShop = () => {
 };
 
 const openSectionModal = (section?: Section) => {
-  editingSection.value = section ? { ...section } : {
+  editingSection.value = section ? { ...section, productIds: [...(section.productIds || [])] } : {
     id: Date.now().toString(),
     name: '',
     description: '',
@@ -381,11 +382,17 @@ const saveSettings = () => {
                    <p class="text-gray-500 text-sm font-normal">Modifie tes infos visibles par les clients.</p>
                 </div>
 
-                <ImageUpload 
-                    v-model="store.logo"
-                    label="Ton Logo / Photo de profil"
-                    shape="circle"
-                />
+                <div class="flex flex-col items-center">
+                    <ImageUpload 
+                        v-model="store.logo"
+                        label="Logo de la boutique"
+                        shape="circle"
+                    />
+                    <div class="text-center mt-2">
+                        <p class="text-sm font-black text-primary">{{ store.name || 'Ta Boutique' }}</p>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ store.whatsapp || 'Pas de numéro' }}</p>
+                    </div>
+                </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div class="space-y-2">

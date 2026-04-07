@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useShopStore } from '../stores/shop';
-import { ShoppingCart, MapPin, Clock, Truck, CreditCard, ChevronRight, ShoppingBag, Image as ImageIcon } from 'lucide-vue-next';
+import { ShoppingCart, MapPin, Clock, Truck, CreditCard, ChevronRight, ShoppingBag, Image as ImageIcon, X, Trash2, Plus } from 'lucide-vue-next';
 
 const store = useShopStore();
 
@@ -22,11 +22,26 @@ const getProduct = (id: string) => {
   return store.products.find(p => p.id === id);
 };
 
-const sendWhatsApp = (productId: string, productName: string, price: number) => {
-    store.trackClick(productId);
-    const text = `Salut ! Je suis intéressé par "${productName}" (${price} FCFA) dans ta boutique ${store.name}. Est-ce disponible ?`;
-    window.open(`https://wa.me/${store.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
+const checkoutWhatsApp = () => {
+    if (store.cart.length === 0) return;
+    
+    let message = `🛒 *Nouvelle commande - ${store.name}*\n\n`;
+    let total = 0;
+    
+    store.cart.forEach(item => {
+        const itemTotal = item.price * item.quantity;
+        message += `• *${item.name}* (x${item.quantity}) - ${itemTotal} FCFA\n`;
+        total += itemTotal;
+        store.trackClick(item.id);
+    });
+    
+    message += `\n💰 *Total : ${total} FCFA*\n`;
+    message += `\nEst-ce que c'est disponible ?`;
+    
+    window.open(`https://wa.me/${store.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
 };
+
+const showCart = ref(false);
 </script>
 
 <template>
@@ -101,10 +116,10 @@ const sendWhatsApp = (productId: string, productName: string, price: number) => 
                       </div>
                   </div>
                   <button 
-                      @click="sendWhatsApp(getProduct(productId)!.id, getProduct(productId)!.name, getProduct(productId)!.price)"
+                      @click="store.addToCart(getProduct(productId)!)"
                       class="p-3 bg-primary text-white rounded-2xl shadow-lg shadow-primary/20 hover:scale-110 active:scale-95 transition-all flex-shrink-0"
                   >
-                      <ShoppingCart :size="20" />
+                      <Plus :size="20" />
                   </button>
                 </div>
               </template>
@@ -143,10 +158,10 @@ const sendWhatsApp = (productId: string, productName: string, price: number) => 
                             <span v-if="p.discountPrice" class="text-xs text-gray-300 line-through">{{ p.discountPrice }} FCFA</span>
                         </div>
                         <button 
-                            @click="sendWhatsApp(p.id, p.name, p.price)"
+                            @click="store.addToCart(p)"
                             class="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-black text-xs shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
                         >
-                            <ShoppingCart :size="16" /> Commander
+                            <Plus :size="16" /> Ajouter
                         </button>
                     </div>
                 </div>
@@ -163,6 +178,93 @@ const sendWhatsApp = (productId: string, productName: string, price: number) => 
           <p class="text-gray-400 font-medium">Reviens plus tard, le commerçant chauffe le stock !</p>
       </div>
     </main>
+
+    <!-- Floating Mini Cart -->
+    <div v-if="store.cart.length > 0" class="fixed bottom-24 right-6 left-6 sm:left-auto sm:w-auto z-50">
+        <button 
+            @click="showCart = true"
+            class="w-full sm:w-auto bg-primary text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center justify-between sm:justify-start gap-4 hover:scale-105 active:scale-95 transition-all group lg:animate-[bounce_2s_infinite]"
+        >
+            <div class="flex items-center gap-3">
+                <div class="relative w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                    <ShoppingCart :size="20" />
+                    <div class="absolute -top-2 -right-2 w-5 h-5 bg-secondary text-primary text-[10px] font-black rounded-full border-2 border-primary flex items-center justify-center">
+                        {{ store.cart.reduce((acc, item) => acc + item.quantity, 0) }}
+                    </div>
+                </div>
+                <div class="text-left">
+                    <p class="text-[8px] font-black uppercase opacity-60">Mon Panier</p>
+                    <p class="text-xs font-black">{{ store.cart.reduce((acc, item) => acc + (item.price * item.quantity), 0) }} FCFA</p>
+                </div>
+            </div>
+            <ChevronRight :size="16" class="group-hover:translate-x-1 transition-transform" />
+        </button>
+    </div>
+
+    <!-- Cart Drawer -->
+    <Teleport to="body">
+        <div v-if="showCart" class="fixed inset-0 z-[100] flex justify-end">
+            <div @click="showCart = false" class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in"></div>
+            
+            <div class="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+                <div class="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+                            <ShoppingCart :size="20" />
+                        </div>
+                        <h3 class="text-xl font-black text-primary">Ton Panier</h3>
+                    </div>
+                    <button @click="showCart = false" class="p-2 hover:bg-gray-200 rounded-full transition-all">
+                        <X :size="20" />
+                    </button>
+                </div>
+
+                <div class="flex-grow overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                    <div v-for="item in store.cart" :key="item.id" class="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <div class="w-16 h-16 rounded-xl bg-white overflow-hidden border border-gray-100 flex-shrink-0">
+                            <img v-if="item.image" :src="item.image" class="w-full h-full object-cover" />
+                        </div>
+                        <div class="flex-grow min-w-0">
+                            <h4 class="font-bold text-primary truncate">{{ item.name }}</h4>
+                            <p class="text-xs font-bold text-secondary">{{ item.price }} FCFA</p>
+                        </div>
+                        <div class="flex items-center gap-3 bg-white p-1 rounded-lg border border-gray-100">
+                            <button @click="store.updateQuantity(item.id, item.quantity - 1)" class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-primary transition-colors hover:bg-gray-50 rounded">-</button>
+                            <span class="text-xs font-black text-primary min-w-[1rem] text-center">{{ item.quantity }}</span>
+                            <button @click="store.updateQuantity(item.id, item.quantity + 1)" class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-primary transition-colors hover:bg-gray-50 rounded">+</button>
+                        </div>
+                        <button @click="store.removeFromCart(item.id)" class="p-1 text-gray-300 hover:text-red-500 transition-colors">
+                            <Trash2 :size="16" />
+                        </button>
+                    </div>
+
+                    <div v-if="store.cart.length === 0" class="text-center py-20 space-y-4">
+                        <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto text-gray-200">
+                            <ShoppingBag :size="32" />
+                        </div>
+                        <p class="text-gray-400 font-bold italic">Ton panier est vide...</p>
+                        <Button @click="showCart = false" variant="primary">Découvrir les articles</Button>
+                    </div>
+                </div>
+
+                <div class="p-6 bg-gray-50 border-t border-gray-100 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <p class="text-xs font-bold text-gray-400 uppercase">Total Commande</p>
+                        <p class="text-2xl font-black text-primary">{{ store.cart.reduce((acc, item) => acc + (item.price * item.quantity), 0) }} FCFA</p>
+                    </div>
+                    
+                    <button 
+                        @click="checkoutWhatsApp"
+                        :disabled="store.cart.length === 0"
+                        class="w-full bg-primary text-white py-4 rounded-2xl font-black flex items-center justify-center gap-3 shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100 uppercase text-xs tracking-widest"
+                    >
+                        <ShoppingCart :size="18" /> Envoyer la commande
+                    </button>
+                    <p class="text-[10px] text-center text-gray-400 font-bold">Paiement à la livraison ou MoMo</p>
+                </div>
+            </div>
+        </div>
+    </Teleport>
 
     <!-- Floating Navigation -->
     <div class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-md border border-white/20 px-8 py-4 rounded-full shadow-2xl flex items-center gap-8 z-50">

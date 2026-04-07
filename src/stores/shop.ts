@@ -12,6 +12,10 @@ export interface Product {
     clicks?: number;
 }
 
+export interface CartItem extends Product {
+    quantity: number;
+}
+
 export interface Section {
     id: string;
     name: string;
@@ -39,6 +43,7 @@ export interface ShopState {
         totalSales: number;
         visitors: number;
     };
+    cart: CartItem[];
 }
 
 export const useShopStore = defineStore('shop', {
@@ -61,6 +66,7 @@ export const useShopStore = defineStore('shop', {
             totalSales: 0,
             visitors: 0,
         },
+        cart: [],
     }),
     actions: {
         updateBasicInfo(info: Partial<ShopState>) {
@@ -131,6 +137,29 @@ export const useShopStore = defineStore('shop', {
                 return true;
             }
             return false;
+        },
+        addToCart(product: Product) {
+            const existing = this.cart.find(item => item.id === product.id);
+            if (existing) {
+                existing.quantity++;
+            } else {
+                this.cart.push({ ...product, quantity: 1 });
+            }
+        },
+        removeFromCart(productId: string) {
+            this.cart = this.cart.filter(item => item.id !== productId);
+        },
+        updateQuantity(productId: string, quantity: number) {
+            const item = this.cart.find(item => item.id === productId);
+            if (item) {
+                item.quantity = quantity;
+                if (item.quantity <= 0) {
+                    this.removeFromCart(productId);
+                }
+            }
+        },
+        clearCart() {
+            this.cart = [];
         }
     }
 });
