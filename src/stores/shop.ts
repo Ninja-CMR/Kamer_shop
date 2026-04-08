@@ -1,6 +1,14 @@
 import { defineStore } from 'pinia';
 import { supabase } from '../lib/supabase';
 
+const safeParse = (val: string | null, fallback: any) => {
+    try {
+        return val ? JSON.parse(val) : fallback;
+    } catch {
+        return fallback;
+    }
+};
+
 export interface Product {
     id: string;
     name: string;
@@ -59,11 +67,11 @@ export const useShopStore = defineStore('shop', {
         zone: '',
         logo: '',
         hours: '',
-        deliveryModes: [],
-        paymentModes: [],
-        products: [],
-        sections: [],
-        currentStep: 1,
+        deliveryModes: safeParse(localStorage.getItem('ks_delivery_modes'), []),
+        paymentModes: safeParse(localStorage.getItem('ks_payment_modes'), []),
+        products: safeParse(localStorage.getItem('ks_products'), []),
+        sections: safeParse(localStorage.getItem('ks_sections'), []),
+        currentStep: parseInt(localStorage.getItem('ks_current_step') || '1'),
         isVerified: false,
         verificationCodeSent: false,
         stats: {
@@ -71,7 +79,7 @@ export const useShopStore = defineStore('shop', {
             visitors: 0,
         },
         cart: [],
-        id: undefined,
+        id: localStorage.getItem('ks_active_shop_id') || undefined,
         slug: undefined,
         loading: false,
     }),
@@ -94,19 +102,25 @@ export const useShopStore = defineStore('shop', {
         },
         addProduct(product: Product) {
             this.products.push(product);
+            localStorage.setItem('ks_products', JSON.stringify(this.products));
+            this.syncProduct(product);
         },
         updateProduct(product: Product) {
             const index = this.products.findIndex(p => p.id === product.id);
             if (index !== -1) {
                 this.products[index] = product;
+                localStorage.setItem('ks_products', JSON.stringify(this.products));
+                this.syncProduct(product);
             }
         },
         async removeProduct(id: string) {
             this.products = this.products.filter(p => p.id !== id);
+            localStorage.setItem('ks_products', JSON.stringify(this.products));
             // Remove from sections too
             this.sections.forEach(s => {
                 s.productIds = s.productIds.filter(pid => pid !== id);
             });
+            localStorage.setItem('ks_sections', JSON.stringify(this.sections));
 
             if (this.id && id.length > 15) {
                 await supabase.from('products').delete().eq('id', id);
@@ -114,15 +128,20 @@ export const useShopStore = defineStore('shop', {
         },
         addSection(section: Section) {
             this.sections.push(section);
+            localStorage.setItem('ks_sections', JSON.stringify(this.sections));
+            this.syncSection(section);
         },
         updateSection(section: Section) {
             const index = this.sections.findIndex(s => s.id === section.id);
             if (index !== -1) {
                 this.sections[index] = section;
+                localStorage.setItem('ks_sections', JSON.stringify(this.sections));
+                this.syncSection(section);
             }
         },
         async removeSection(id: string) {
             this.sections = this.sections.filter(s => s.id !== id);
+            localStorage.setItem('ks_sections', JSON.stringify(this.sections));
             if (this.id && id.length > 15) {
                 await supabase.from('sections').delete().eq('id', id);
             }
@@ -136,12 +155,15 @@ export const useShopStore = defineStore('shop', {
         },
         setStep(step: number) {
             this.currentStep = step;
+            localStorage.setItem('ks_current_step', step.toString());
         },
         nextStep() {
             this.currentStep++;
+            localStorage.setItem('ks_current_step', this.currentStep.toString());
         },
         prevStep() {
             this.currentStep--;
+            localStorage.setItem('ks_current_step', this.currentStep.toString());
         },
         sendVerificationCode() {
             this.verificationCodeSent = true;
@@ -186,12 +208,16 @@ export const useShopStore = defineStore('shop', {
             try {
                 let query = supabase.from('shops').select('*');
 
+                const storedId = localStorage.getItem('ks_active_shop_id');
+
                 if (slug) {
                     query = query.eq('slug', slug);
                 } else if (this.id) {
                     query = query.eq('id', this.id);
+                } else if (storedId) {
+                    query = query.eq('id', storedId);
                 } else {
-                    query = query.limit(1); // Fallback for testing
+                    query = query.limit(1); // Final fallback for testing
                 }
 
                 const { data: shops, error } = await query;
@@ -199,6 +225,7 @@ export const useShopStore = defineStore('shop', {
                 if (error) throw error;
                 if (shops && shops.length > 0) {
                     const shop = shops[0];
+                    console.log('Shop found:', shop.name, shop.id);
                     this.id = shop.id;
                     this.slug = shop.slug;
                     this.name = shop.name;
@@ -212,21 +239,24 @@ export const useShopStore = defineStore('shop', {
                     this.stats.visitors = shop.visitors;
 
                     // Fetch Products
+                    console.log('Fetching products for shop:', this.id);
                     const { data: products } = await supabase
                         .from('products')
                         .select('*')
                         .eq('shop_id', this.id);
 
-                    this.products = (products || []).map(p => ({
-                        id: p.id,
-                        name: p.name,
-                        price: p.price,
-                        discountPrice: p.discount_price,
-                        description: p.description,
-                        image: p.image,
-                        inStock: p.in_stock,
-                        clicks: p.order_count
-                    }));
+                    if (products) {
+                        this.products = products.map(p => ({
+                            id: p.id,
+                            name: p.name,
+                            price: p.price,
+                            discountPrice: p.discount_price,
+                            description: p.description,
+                            image: p.image,
+                            inStock: p.in_stock,
+                            clicks: p.order_count
+                        }));
+                    }
 
                     // Fetch Sections
                     const { data: sections } = await supabase
@@ -234,13 +264,24 @@ export const useShopStore = defineStore('shop', {
                         .select('*')
                         .eq('shop_id', this.id);
 
-                    this.sections = (sections || []).map(s => ({
-                        id: s.id,
-                        name: s.name,
-                        description: s.description,
-                        coverImage: s.cover_image,
-                        productIds: s.product_ids || []
-                    }));
+                    if (sections) {
+                        this.sections = sections.map(s => ({
+                            id: s.id,
+                            name: s.name,
+                            description: s.description,
+                            coverImage: s.cover_image,
+                            productIds: s.product_ids || []
+                        }));
+                    }
+
+                    // Sync to local storage
+                    localStorage.setItem('ks_products', JSON.stringify(this.products));
+                    localStorage.setItem('ks_sections', JSON.stringify(this.sections));
+                    localStorage.setItem('ks_delivery_modes', JSON.stringify(this.deliveryModes));
+                    localStorage.setItem('ks_payment_modes', JSON.stringify(this.paymentModes));
+                    localStorage.setItem('ks_active_shop_id', this.id!);
+                } else {
+                    console.warn('No shop found matching query');
                 }
             } finally {
                 this.loading = false;
@@ -275,10 +316,22 @@ export const useShopStore = defineStore('shop', {
 
                 if (this.id) {
                     await supabase.from('shops').update(shopData).eq('id', this.id);
+                    localStorage.setItem('ks_active_shop_id', this.id);
                 } else {
                     const { data, error } = await supabase.from('shops').insert([shopData]).select();
                     if (error) throw error;
-                    if (data) this.id = data[0].id;
+                    if (data) {
+                        this.id = data[0].id;
+                        localStorage.setItem('ks_active_shop_id', this.id!);
+
+                        // Sync existing products/sections now that we have an active shop ID
+                        for (const p of this.products) {
+                            await this.syncProduct(p);
+                        }
+                        for (const s of this.sections) {
+                            await this.syncSection(s);
+                        }
+                    }
                 }
             } finally {
                 this.loading = false;

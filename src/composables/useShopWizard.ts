@@ -27,9 +27,13 @@ export function useShopWizard() {
         }
     });
 
-    const next = () => {
+    const next = async () => {
         if (isStepValid.value) {
             store.nextStep();
+            // Auto-save to Supabase as we progress
+            if (store.currentStep > 1) {
+                await store.saveShop();
+            }
         }
     };
 
