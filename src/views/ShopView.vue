@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useShopStore } from '../stores/shop';
-import { ShoppingCart, MapPin, Clock, Truck, CreditCard, ChevronRight, ShoppingBag, Image as ImageIcon, X, Trash2, Plus } from 'lucide-vue-next';
+import { ShoppingCart, MapPin, Clock, Truck, CreditCard, ChevronRight, ShoppingBag, Image as ImageIcon, X, Trash2, Plus, Share2, Info } from 'lucide-vue-next';
 
 const store = useShopStore();
 const route = useRoute();
@@ -45,32 +45,99 @@ const checkoutWhatsApp = () => {
     window.open(`https://wa.me/${store.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
 };
 
+const shareShop = async () => {
+    const shareData = {
+        title: store.name,
+        text: `Découvre ma boutique sur KamerShop : ${store.name}`,
+        url: window.location.href
+    };
+    
+    try {
+        if (navigator.share) {
+            await navigator.share(shareData);
+        } else {
+            await navigator.clipboard.writeText(window.location.href);
+            alert('Lien de la boutique copié !');
+        }
+    } catch (err) {
+        console.error('Erreur partage:', err);
+    }
+};
+
 const showCart = ref(false);
+const showInfo = ref(false);
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-50 pb-24">
-    <!-- Shop Header (Minimalist) -->
-    <header class="pt-20 pb-10 px-6 bg-white border-b border-gray-100">
-      <div class="max-w-4xl mx-auto flex flex-col items-center text-center">
-        <div class="w-24 h-24 md:w-32 md:h-32 rounded-[2.5rem] bg-gray-50 flex items-center justify-center text-4xl border border-gray-100 overflow-hidden shadow-xl mb-6">
-          <img v-if="store.logo" :src="store.logo" class="w-full h-full object-cover" />
-          <span v-else>{{ store.name ? store.name.charAt(0).toUpperCase() : '🏪' }}</span>
+    <!-- Shop Header (WhatsApp Business Style) -->
+    <header class="relative pt-6 pb-12 px-6 bg-white border-b border-gray-100 overflow-hidden">
+      <!-- Background Abstract Shape -->
+      <div class="absolute -top-24 -right-24 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
+      
+      <div class="max-w-4xl mx-auto relative z-10">
+        <!-- Top Navigation Mock -->
+        <div class="flex items-center justify-between mb-8">
+            <h2 class="text-xs font-black text-gray-400 uppercase tracking-widest italic">KamerShop Merchant</h2>
+            <button @click="shareShop" class="p-3 bg-gray-50 text-primary rounded-2xl hover:bg-primary/10 transition-colors shadow-sm border border-gray-100">
+                <Share2 :size="18" />
+            </button>
         </div>
-        
-        <h1 class="text-3xl md:text-5xl font-black mb-2 text-primary tracking-tight">{{ store.name || 'Ma Boutique' }}</h1>
-        <p v-if="store.description" class="text-xs md:text-sm font-medium text-gray-500 max-w-xl mx-auto mb-6 italic">" {{ store.description }} "</p>
-        
-        <div class="flex flex-wrap justify-center gap-3 text-[10px] font-black uppercase tracking-wider">
-           <div v-if="store.zone" class="flex items-center gap-1.5 bg-primary/5 text-primary px-3 py-1.5 rounded-full border border-primary/10">
-              <MapPin :size="10" /> {{ store.zone }}
-           </div>
-           <div v-if="store.hours" class="flex items-center gap-1.5 bg-gray-100 text-gray-400 px-3 py-1.5 rounded-full border border-gray-200">
-              <Clock :size="10" /> {{ store.hours }}
-           </div>
-           <div v-if="store.deliveryModes.length > 0" class="flex items-center gap-1.5 bg-secondary text-primary px-3 py-1.5 rounded-full shadow-lg">
-              <Truck :size="10" /> Livraison dispo
-           </div>
+
+        <div class="flex flex-col md:flex-row items-center md:items-end gap-6 md:gap-10">
+            <!-- Profile/Logo -->
+            <div class="relative">
+                <div class="w-32 h-32 md:w-40 md:h-40 rounded-[3rem] bg-gray-50 flex items-center justify-center text-5xl border-4 border-white overflow-hidden shadow-2xl ring-1 ring-gray-100">
+                    <img v-if="store.logo" :src="store.logo" class="w-full h-full object-cover" />
+                    <span v-else>{{ store.name ? store.name.charAt(0).toUpperCase() : '🏪' }}</span>
+                </div>
+                <div class="absolute -bottom-2 -right-2 w-10 h-10 bg-green-500 border-4 border-white rounded-full flex items-center justify-center shadow-lg">
+                    <div class="w-2 h-2 bg-white rounded-full animate-ping"></div>
+                </div>
+            </div>
+
+            <div class="flex-grow text-center md:text-left space-y-3">
+                <p class="text-[10px] font-black text-secondary uppercase tracking-[0.3em] ml-1">Bienvenue ma Personne ! 👋</p>
+                <h1 class="text-4xl md:text-6xl font-black text-primary tracking-tighter leading-none">{{ store.name || 'Ma Boutique' }}</h1>
+                
+                <p v-if="store.description" class="text-sm font-medium text-gray-500 max-w-xl italic leading-relaxed">
+                    {{ store.description }}
+                </p>
+
+                <div class="flex flex-wrap justify-center md:justify-start gap-3 pt-2">
+                    <div v-if="store.hours" class="flex items-center gap-2 bg-gray-50 text-gray-500 px-4 py-2 rounded-xl text-xs font-bold border border-gray-100 shadow-sm">
+                        <Clock :size="14" class="text-primary" /> {{ store.hours }}
+                    </div>
+                    <div v-if="store.zone" class="flex items-center gap-2 bg-gray-50 text-gray-500 px-4 py-2 rounded-xl text-xs font-bold border border-gray-100 shadow-sm">
+                        <MapPin :size="14" class="text-primary" /> {{ store.zone }}
+                    </div>
+                    <button @click="showInfo = !showInfo" class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+                        <Info :size="14" /> Plus d'infos
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Dropdown (Modern) -->
+        <div v-if="showInfo" class="mt-8 p-6 bg-gray-50 rounded-[2.5rem] border border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-6 animate-in slide-in-from-top-4 duration-300">
+            <div class="space-y-4">
+                <h4 class="text-[10px] font-black text-primary uppercase tracking-widest border-b border-primary/10 pb-2 flex items-center gap-2">
+                    <Truck :size="12" /> Modes de Livraison
+                </h4>
+                <div v-if="store.deliveryModes.length > 0" class="flex flex-wrap gap-2">
+                    <span v-for="mode in store.deliveryModes" :key="mode" class="px-3 py-1 bg-white rounded-lg text-xs font-bold text-gray-600 border border-gray-100 shadow-sm">{{ mode }}</span>
+                </div>
+                <p v-else class="text-xs text-gray-400 italic">Livraison à convenir</p>
+            </div>
+            <div class="space-y-4">
+                <h4 class="text-[10px] font-black text-primary uppercase tracking-widest border-b border-primary/10 pb-2 flex items-center gap-2">
+                    <CreditCard :size="12" /> Modes de Paiement
+                </h4>
+                <div v-if="store.paymentModes.length > 0" class="flex flex-wrap gap-2">
+                    <span v-for="mode in store.paymentModes" :key="mode" class="px-3 py-1 bg-white rounded-lg text-xs font-bold text-gray-600 border border-gray-100 shadow-sm">{{ getPaymentLabel(mode) }}</span>
+                </div>
+                <p v-else class="text-xs text-gray-400 italic">Paiement Cash</p>
+            </div>
         </div>
       </div>
     </header>
@@ -262,7 +329,7 @@ const showCart = ref(false);
                         :disabled="store.cart.length === 0"
                         class="w-full bg-primary text-white py-4 rounded-2xl font-black flex items-center justify-center gap-3 shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100 uppercase text-xs tracking-widest"
                     >
-                        <ShoppingCart :size="18" /> Envoyer la commande
+                        <ShoppingCart :size="18" /> Envoyer la commande (WhatsApp)
                     </button>
                     <p class="text-[10px] text-center text-gray-400 font-bold">Paiement à la livraison ou MoMo</p>
                 </div>
