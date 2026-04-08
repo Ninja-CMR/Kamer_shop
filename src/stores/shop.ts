@@ -46,6 +46,7 @@ export interface ShopState {
     };
     cart: CartItem[];
     id?: string;
+    slug?: string;
     loading: boolean;
 }
 
@@ -71,6 +72,7 @@ export const useShopStore = defineStore('shop', {
         },
         cart: [],
         id: undefined,
+        slug: undefined,
         loading: false,
     }),
     actions: {
@@ -182,16 +184,23 @@ export const useShopStore = defineStore('shop', {
             console.log('Fetching shop...', slug);
             this.loading = true;
             try {
-                // For now, let's fetch by name or a fixed ID if we're test phase
-                const { data: shops, error } = await supabase
-                    .from('shops')
-                    .select('*')
-                    .limit(1);
+                let query = supabase.from('shops').select('*');
+
+                if (slug) {
+                    query = query.eq('slug', slug);
+                } else if (this.id) {
+                    query = query.eq('id', this.id);
+                } else {
+                    query = query.limit(1); // Fallback for testing
+                }
+
+                const { data: shops, error } = await query;
 
                 if (error) throw error;
                 if (shops && shops.length > 0) {
                     const shop = shops[0];
                     this.id = shop.id;
+                    this.slug = shop.slug;
                     this.name = shop.name;
                     this.whatsapp = shop.whatsapp;
                     this.description = shop.description;
@@ -241,10 +250,19 @@ export const useShopStore = defineStore('shop', {
         async saveShop() {
             if (!this.whatsapp || !this.name) return;
 
+            // Generate slug if missing
+            if (!this.slug) {
+                this.slug = this.name.toLowerCase().trim()
+                    .replace(/[^\w\s-]/g, '')
+                    .replace(/[\s_-]+/g, '-')
+                    .replace(/^-+|-+$/g, '');
+            }
+
             this.loading = true;
             try {
                 const shopData = {
                     name: this.name,
+                    slug: this.slug,
                     whatsapp: this.whatsapp,
                     description: this.description,
                     logo: this.logo,

@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import { useShopStore } from '../stores/shop';
 import { ShoppingCart, MapPin, Clock, Truck, CreditCard, ChevronRight, ShoppingBag, Image as ImageIcon, X, Trash2, Plus } from 'lucide-vue-next';
 
 const store = useShopStore();
+const route = useRoute();
 
 onMounted(async () => {
     store.incrementVisitors();
-    await store.fetchShop();
+    const shopSlug = route.params.shopName as string;
+    await store.fetchShop(shopSlug);
 });
 
 const getPaymentLabel = (id: string) => {
