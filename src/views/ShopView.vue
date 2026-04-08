@@ -5,8 +5,9 @@ import { ShoppingCart, MapPin, Clock, Truck, CreditCard, ChevronRight, ShoppingB
 
 const store = useShopStore();
 
-onMounted(() => {
+onMounted(async () => {
     store.incrementVisitors();
+    await store.fetchShop();
 });
 
 const getPaymentLabel = (id: string) => {

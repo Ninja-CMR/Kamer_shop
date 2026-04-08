@@ -25,10 +25,11 @@ const store = useShopStore();
 const route = useRoute();
 const activeTab = ref('overview'); // Default to overview
 
-onMounted(() => {
+onMounted(async () => {
   if (route.query.tab) {
     activeTab.value = route.query.tab as string;
   }
+  await store.fetchShop();
 });
 
 watch(() => route.query.tab, (newTab) => {
@@ -58,15 +59,15 @@ const openProductModal = (product?: Product) => {
   showProductModal.value = true;
 };
 
-const saveProduct = () => {
+const saveProduct = async () => {
   if (editingProduct.value) {
-    const p = editingProduct.value as Product;
-    const exists = store.products.find(item => item.id === p.id);
-    if (exists) {
-      store.updateProduct(p);
+    const product = editingProduct.value as Product;
+    if (store.products.find(p => p.id === product.id)) {
+      store.updateProduct(product);
     } else {
-      store.addProduct(p);
+      store.addProduct(product);
     }
+    await store.syncProduct(product);
     showProductModal.value = false;
   }
 };
@@ -88,15 +89,16 @@ const openSectionModal = (section?: Section) => {
   showSectionModal.value = true;
 };
 
-const saveSection = () => {
-  if (editingSection.value && editingSection.value.name) {
-    const s = editingSection.value as Section;
-    const exists = store.sections.find(item => item.id === s.id);
-    if (exists) {
-      store.updateSection(s);
+const saveSection = async () => {
+  if (editingSection.value) {
+    // Deep clone productIds to avoid reference issues
+    const section = { ...editingSection.value, productIds: [...(editingSection.value.productIds || [])] } as Section;
+    if (store.sections.find(s => s.id === section.id)) {
+      store.updateSection(section);
     } else {
-      store.addSection(s);
+      store.addSection(section);
     }
+    await store.syncSection(section);
     showSectionModal.value = false;
   }
 };
@@ -115,6 +117,10 @@ const saveSettings = () => {
     // but we can add a notification or additional logic here
     alert('Réglages enregistrés !');
 };
+// Autosave settings when they change (simplified for now)
+watch([() => store.name, () => store.whatsapp, () => store.description, () => store.logo, () => store.zone, () => store.hours], () => {
+    store.saveShop();
+}, { deep: true });
 </script>
 
 <template>
@@ -339,7 +345,8 @@ const saveSettings = () => {
                 <div 
                     v-for="s in store.sections" 
                     :key="s.id"
-                    class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden flex flex-col group"
+                    @click="openSectionModal(s)"
+                    class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden flex flex-col group cursor-pointer hover:shadow-2xl transition-all"
                 >
                     <div class="h-32 bg-gray-50 relative">
                         <img v-if="s.coverImage" :src="s.coverImage" class="w-full h-full object-cover" />
@@ -484,7 +491,7 @@ const saveSettings = () => {
                     </button>
                 </div>
 
-                <div class="p-8 space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                <div class="flex-grow p-4 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar">
                     <ImageUpload v-model="editingSection!.coverImage" label="Photo de couverture du bloc" />
 
                     <div class="space-y-4">
@@ -498,7 +505,7 @@ const saveSettings = () => {
                         </div>
                     </div>
 
-                    <div class="space-y-3">
+                    <div class="space-y-3 pb-8">
                         <label class="text-xs font-bold text-gray-400 uppercase">Sélectionner les produits</label>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <button 
@@ -512,8 +519,8 @@ const saveSettings = () => {
                                     <img v-if="p.image" :src="p.image" class="w-full h-full object-cover" />
                                 </div>
                                 <div class="flex-grow min-w-0">
-                                    <p class="font-bold text-xs truncate">{{ p.name }}</p>
-                                    <p class="text-[10px] font-bold text-secondary">{{ p.price }} FCFA</p>
+                                    <p class="font-bold text-[10px] sm:text-xs truncate">{{ p.name }}</p>
+                                    <p class="text-[8px] sm:text-[10px] font-bold text-secondary">{{ p.price }} FCFA</p>
                                 </div>
                                 <Check v-if="editingSection!.productIds!.includes(p.id)" :size="16" />
                             </button>
@@ -521,9 +528,9 @@ const saveSettings = () => {
                     </div>
                 </div>
 
-                <div class="p-8 bg-gray-50 flex gap-4">
-                    <Button @click="showSectionModal = false" variant="secondary" class="flex-grow">Annuler</Button>
-                    <Button @click="saveSection" variant="primary" class="flex-grow">Enregistrer</Button>
+                <div class="p-4 sm:p-8 bg-gray-50 border-t border-gray-100 flex gap-4 mt-auto">
+                    <Button @click="showSectionModal = false" variant="secondary" class="flex-grow py-3 text-xs uppercase font-black">Annuler</Button>
+                    <Button @click="saveSection" variant="primary" class="flex-grow py-3 text-xs uppercase font-black">Enregistrer</Button>
                 </div>
             </div>
         </div>

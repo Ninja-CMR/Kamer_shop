@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { Camera, Trash2, Upload, Check } from 'lucide-vue-next';
+import { Camera, Trash2, Upload, Check, X } from 'lucide-vue-next';
 import { Cropper } from 'vue-advanced-cropper';
 import 'vue-advanced-cropper/dist/style.css';
 
@@ -127,27 +127,29 @@ const removeImage = () => {
             />
           </div>
 
-          <div class="p-6 bg-gray-50 flex items-center gap-4">
+          <div class="p-4 sm:p-6 bg-gray-50 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mt-auto">
             <button 
               @click="isFreeCrop = !isFreeCrop"
-              class="px-4 py-3 rounded-xl font-bold border-2 transition-all flex items-center gap-2"
+              class="px-4 py-3 rounded-xl font-bold border-2 transition-all flex items-center justify-center gap-2 text-xs"
               :class="[isFreeCrop ? 'bg-primary/10 border-primary text-primary' : 'bg-white border-gray-100 text-gray-400']"
             >
               {{ isFreeCrop ? 'Ratio Libre' : 'Ratio Fixe' }}
             </button>
-            <div class="flex-grow"></div>
-            <button 
-              @click="showCropper = false" 
-              class="px-6 py-3 rounded-xl font-bold text-gray-500 hover:bg-gray-200 transition-all font-black text-xs uppercase"
-            >
-              Annuler
-            </button>
-            <button 
-              @click="cropImage" 
-              class="px-10 py-3 rounded-xl font-bold bg-primary text-white shadow-lg shadow-primary/20 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all"
-            >
-              <Check :size="20" /> Valider
-            </button>
+            <div class="hidden sm:block flex-grow"></div>
+            <div class="flex items-center gap-3 flex-grow sm:flex-grow-0">
+              <button 
+                @click="showCropper = false" 
+                class="flex-grow sm:flex-grow-0 px-6 py-3 rounded-xl font-bold text-gray-500 hover:bg-gray-200 transition-all font-black text-[10px] uppercase"
+              >
+                Annuler
+              </button>
+              <button 
+                @click="cropImage" 
+                class="flex-grow sm:flex-grow-0 px-10 py-3 rounded-xl font-bold bg-primary text-white shadow-lg shadow-primary/20 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all text-sm"
+              >
+                <Check :size="18" /> Valider
+              </button>
+            </div>
           </div>
         </div>
       </div>

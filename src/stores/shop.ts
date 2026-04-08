@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { supabase } from '../lib/supabase';
 
 export interface Product {
     id: string;
@@ -44,6 +45,8 @@ export interface ShopState {
         visitors: number;
     };
     cart: CartItem[];
+    id?: string;
+    loading: boolean;
 }
 
 export const useShopStore = defineStore('shop', {
@@ -67,6 +70,8 @@ export const useShopStore = defineStore('shop', {
             visitors: 0,
         },
         cart: [],
+        id: undefined,
+        loading: false,
     }),
     actions: {
         updateBasicInfo(info: Partial<ShopState>) {
@@ -94,12 +99,16 @@ export const useShopStore = defineStore('shop', {
                 this.products[index] = product;
             }
         },
-        removeProduct(id: string) {
+        async removeProduct(id: string) {
             this.products = this.products.filter(p => p.id !== id);
             // Remove from sections too
             this.sections.forEach(s => {
                 s.productIds = s.productIds.filter(pid => pid !== id);
             });
+
+            if (this.id && id.length > 15) {
+                await supabase.from('products').delete().eq('id', id);
+            }
         },
         addSection(section: Section) {
             this.sections.push(section);
@@ -110,12 +119,18 @@ export const useShopStore = defineStore('shop', {
                 this.sections[index] = section;
             }
         },
-        removeSection(id: string) {
+        async removeSection(id: string) {
             this.sections = this.sections.filter(s => s.id !== id);
+            if (this.id && id.length > 15) {
+                await supabase.from('sections').delete().eq('id', id);
+            }
         },
-        toggleStock(id: string) {
+        async toggleStock(id: string) {
             const product = this.products.find(p => p.id === id);
-            if (product) product.inStock = !product.inStock;
+            if (product) {
+                product.inStock = !product.inStock;
+                await this.syncProduct(product);
+            }
         },
         setStep(step: number) {
             this.currentStep = step;
@@ -160,6 +175,136 @@ export const useShopStore = defineStore('shop', {
         },
         clearCart() {
             this.cart = [];
+        },
+
+        // Supabase Logic
+        async fetchShop(slug?: string) {
+            console.log('Fetching shop...', slug);
+            this.loading = true;
+            try {
+                // For now, let's fetch by name or a fixed ID if we're test phase
+                const { data: shops, error } = await supabase
+                    .from('shops')
+                    .select('*')
+                    .limit(1);
+
+                if (error) throw error;
+                if (shops && shops.length > 0) {
+                    const shop = shops[0];
+                    this.id = shop.id;
+                    this.name = shop.name;
+                    this.whatsapp = shop.whatsapp;
+                    this.description = shop.description;
+                    this.logo = shop.logo;
+                    this.zone = shop.zone;
+                    this.hours = shop.hours;
+                    this.deliveryModes = shop.delivery_modes || [];
+                    this.paymentModes = shop.payment_modes || [];
+                    this.stats.visitors = shop.visitors;
+
+                    // Fetch Products
+                    const { data: products } = await supabase
+                        .from('products')
+                        .select('*')
+                        .eq('shop_id', this.id);
+
+                    this.products = (products || []).map(p => ({
+                        id: p.id,
+                        name: p.name,
+                        price: p.price,
+                        discountPrice: p.discount_price,
+                        description: p.description,
+                        image: p.image,
+                        inStock: p.in_stock,
+                        clicks: p.order_count
+                    }));
+
+                    // Fetch Sections
+                    const { data: sections } = await supabase
+                        .from('sections')
+                        .select('*')
+                        .eq('shop_id', this.id);
+
+                    this.sections = (sections || []).map(s => ({
+                        id: s.id,
+                        name: s.name,
+                        description: s.description,
+                        coverImage: s.cover_image,
+                        productIds: s.product_ids || []
+                    }));
+                }
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async saveShop() {
+            if (!this.whatsapp || !this.name) return;
+
+            this.loading = true;
+            try {
+                const shopData = {
+                    name: this.name,
+                    whatsapp: this.whatsapp,
+                    description: this.description,
+                    logo: this.logo,
+                    zone: this.zone,
+                    hours: this.hours,
+                    delivery_modes: this.deliveryModes,
+                    payment_modes: this.paymentModes,
+                    visitors: this.stats.visitors
+                };
+
+                if (this.id) {
+                    await supabase.from('shops').update(shopData).eq('id', this.id);
+                } else {
+                    const { data, error } = await supabase.from('shops').insert([shopData]).select();
+                    if (error) throw error;
+                    if (data) this.id = data[0].id;
+                }
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async syncProduct(product: Product) {
+            if (!this.id) return;
+            const pData = {
+                shop_id: this.id,
+                name: product.name,
+                description: product.description,
+                price: product.price,
+                discount_price: product.discountPrice,
+                image: product.image,
+                in_stock: product.inStock,
+                order_count: product.clicks || 0
+            };
+
+            // Check if product exists in DB (UUID check)
+            if (product.id && product.id.length > 15) { // Simple UUID check
+                await supabase.from('products').upsert({ id: product.id, ...pData });
+            } else {
+                const { data } = await supabase.from('products').insert([pData]).select();
+                if (data) product.id = data[0].id;
+            }
+        },
+
+        async syncSection(section: Section) {
+            if (!this.id) return;
+            const sData = {
+                shop_id: this.id,
+                name: section.name,
+                description: section.description,
+                cover_image: section.coverImage,
+                product_ids: section.productIds
+            };
+
+            if (section.id && section.id.length > 15) {
+                await supabase.from('sections').upsert({ id: section.id, ...sData });
+            } else {
+                const { data } = await supabase.from('sections').insert([sData]).select();
+                if (data) section.id = data[0].id;
+            }
         }
     }
 });
