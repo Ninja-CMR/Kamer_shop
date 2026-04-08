@@ -78,7 +78,12 @@ const showInfo = ref(false);
       <div class="max-w-4xl mx-auto relative z-10">
         <!-- Top Navigation Mock -->
         <div class="flex items-center justify-between mb-8">
-            <h2 class="text-xs font-black text-gray-400 uppercase tracking-widest italic">KamerShop Merchant</h2>
+            <div class="flex items-center gap-3">
+                <div v-if="store.logo" class="w-8 h-8 rounded-lg overflow-hidden border border-gray-100 shadow-sm">
+                    <img :src="store.logo" class="w-full h-full object-cover" />
+                </div>
+                <h2 class="text-xs font-black text-gray-400 uppercase tracking-widest italic">{{ store.name }}</h2>
+            </div>
             <button @click="shareShop" class="p-3 bg-gray-50 text-primary rounded-2xl hover:bg-primary/10 transition-colors shadow-sm border border-gray-100">
                 <Share2 :size="18" />
             </button>
